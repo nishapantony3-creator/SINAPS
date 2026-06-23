@@ -40,7 +40,7 @@
 /* ─── Base Reset ─── */
 *,*::before,*::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-html { scroll-behavior: smooth; }
+html { scroll-behavior: smooth; overflow-x: hidden; }
 
 body {
   background: var(--bg-cream);
@@ -854,46 +854,7 @@ img { max-width: 100%; height: auto; display: block; }
 .fees-note i { font-size: 24px; flex-shrink: 0; }
 .fees-note p { font-size: 15px; line-height: 1.6; margin: 0; }
 
-/* ───────────────────────────────────────────────────────
-   RESPONSIVE
-   ─────────────────────────────────────────────────────── */
-@media (max-width: 1024px) {
-  .hero-inner { flex-direction: column; text-align: center; gap: 40px; }
-  .hero-desc { margin-left: auto; margin-right: auto; }
-  .hero-buttons { justify-content: center; }
-  .hero-pills { justify-content: center; }
-  .admissions-layout { flex-direction: column; }
-  .life-grid { grid-template-columns: 1fr; }
-  .footer-grid { grid-template-columns: 1fr 1fr; }
-}
 
-@media (max-width: 768px) {
-  .navbar-links { display: none; }
-  .navbar-toggle { display: block; }
-  .navbar-cta { display: none; }
-  .mobile-drawer { display: block; }
-  .hero-title { font-size: 40px; }
-  .section-title { font-size: 32px; }
-  .academics-grid { grid-template-columns: 1fr; }
-  .syllabus-row { flex-direction: column; }
-  .footer-grid { grid-template-columns: 1fr; }
-  .photo-strip-img { width: 160px; height: 110px; }
-  .why-us, .academics-section, .life-section, .stats-section, .admissions-section { padding: 60px 16px; }
-}
-
-@media (max-width: 480px) {
-  .hero { padding: 120px 16px 40px; min-height: auto; }
-  .hero-title { font-size: 32px; line-height: 1.1; }
-  .hero-desc { font-size: 16px; }
-  .hero-buttons { flex-direction: column; align-items: stretch; }
-  .hero-card { max-width: 100%; margin: 0 auto; }
-  .admissions-card { padding: 28px 16px; }
-  .top-bar-inner { font-size: 11px; flex-wrap: wrap; justify-content: center; text-align: center; gap: 8px; }
-  .top-bar .sep { display: none; }
-  .section-title { font-size: 28px; }
-  .stat-card { padding: 24px 16px; }
-  .stat-num { font-size: 36px; }
-}
 
 /* ═══════════════════════════════════════════════════════
    11. FOOTER
@@ -978,3 +939,43 @@ img { max-width: 100%; height: auto; display: block; }
 .footer-bottom-links a:hover { color: #fff; }
 .footer-bottom-links .dot { color: rgba(255,255,255,0.1); }
 
+/* ───────────────────────────────────────────────────────
+   RESPONSIVE
+   ─────────────────────────────────────────────────────── */
+@media (max-width: 1024px) {
+  .hero-inner { flex-direction: column; text-align: center; gap: 40px; }
+  .hero-desc { margin-left: auto; margin-right: auto; }
+  .hero-buttons { justify-content: center; }
+  .hero-pills { justify-content: center; }
+  .admissions-layout { flex-direction: column; }
+  .life-grid { grid-template-columns: 1fr; }
+  .footer-grid { grid-template-columns: 1fr 1fr; }
+}
+
+@media (max-width: 768px) {
+  .navbar-links { display: none; }
+  .navbar-toggle { display: block; }
+  .navbar-cta { display: none; }
+  .mobile-drawer { display: block; }
+  .hero-title { font-size: 40px; }
+  .section-title { font-size: 32px; }
+  .academics-grid { grid-template-columns: 1fr; }
+  .syllabus-row { flex-direction: column; }
+  .footer-grid { grid-template-columns: 1fr; }
+  .photo-strip-img { width: 160px; height: 110px; }
+  .why-us, .academics-section, .life-section, .stats-section, .admissions-section { padding: 60px 16px; }
+}
+
+@media (max-width: 480px) {
+  .hero { padding: 120px 16px 40px; min-height: auto; }
+  .hero-title { font-size: 32px; line-height: 1.1; }
+  .hero-desc { font-size: 16px; }
+  .hero-buttons { flex-direction: column; align-items: stretch; }
+  .hero-card { max-width: 100%; margin: 0 auto; }
+  .admissions-card { padding: 28px 16px; }
+  .top-bar-inner { font-size: 11px; flex-wrap: wrap; justify-content: center; text-align: center; gap: 8px; }
+  .top-bar .sep { display: none; }
+  .section-title { font-size: 28px; }
+  .stat-card { padding: 24px 16px; }
+  .stat-num { font-size: 36px; }
+}
