@@ -3,7 +3,7 @@
 import React, { useEffect, useState, useRef } from "react";
 import { motion, useInView } from "framer-motion";
 
-function StatCard({ numStr, label }: { numStr: string; label: string }) {
+function StatCard({ numStr, label, link }: { numStr: string; label: string; link?: string }) {
   const ref = useRef(null);
   const isInView = useInView(ref, { once: true, margin: "-80px" });
   const [count, setCount] = useState(0);
@@ -23,19 +23,24 @@ function StatCard({ numStr, label }: { numStr: string; label: string }) {
     requestAnimationFrame(tick);
   }, [isInView, numVal]);
 
-  return (
+  const cardContent = (
     <motion.div ref={ref} className="stat-card" whileHover={{ y: -4, transition: { duration: 0.2 } }}>
       <div className="stat-number">{count}{suffix}</div>
       <div className="stat-label">{label}</div>
     </motion.div>
   );
+
+  if (link) {
+    return <a href={link} style={{ textDecoration: 'none' }}>{cardContent}</a>;
+  }
+  return cardContent;
 }
 
 export default function Section5Stats() {
   const stats = [
-    { numStr: "500+", label: "Happy Students" },
-    { numStr: "15+", label: "Qualified Teachers" },
-    { numStr: "2", label: "Curriculum Boards" },
+    { numStr: "170", label: "Students", link: "/students" },
+    { numStr: "10", label: "Teachers", link: "/teachers" },
+    { numStr: "2", label: "State and CBSE", link: "/curriculum" },
     { numStr: "100%", label: "Dedicated to Excellence" },
   ];
 
@@ -47,7 +52,7 @@ export default function Section5Stats() {
           <div className="gradient-line" style={{ background: "var(--yellow)" }} />
         </div>
         <div className="stats-grid">
-          {stats.map((s, i) => <StatCard key={i} numStr={s.numStr} label={s.label} />)}
+          {stats.map((s, i) => <StatCard key={i} numStr={s.numStr} label={s.label} link={s.link} />)}
         </div>
       </div>
     </section>

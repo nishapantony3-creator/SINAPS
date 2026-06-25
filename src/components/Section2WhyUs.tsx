@@ -8,7 +8,7 @@ const cards = [
   { title: "Safe & Nurturing Campus", icon: "ti-shield-heart", body: "A warm, secure environment where every child feels valued, respected, and excited to come to school.", color: "blue", cardColor: "card-blue" },
   { title: "Passionate Educators", icon: "ti-star", body: "Dedicated, qualified teachers who inspire children to discover their talents and reach their potential.", color: "green", cardColor: "card-green" },
   { title: "Modern Facilities", icon: "ti-building-castle", body: "Well-equipped classrooms and play areas that spark creativity and make learning an adventure.", color: "pink", cardColor: "card-pink" },
-  { title: "CBSE & ICSE Syllabus", icon: "ti-certificate", body: "A balanced, rigorous curriculum that builds strong academic foundations for every student.", color: "purple", cardColor: "card-purple" },
+  { title: "CBSE Integrated Syllabus", icon: "ti-certificate", body: "A balanced, rigorous curriculum that builds strong academic foundations for every student.", color: "purple", cardColor: "card-purple" },
 ];
 
 const containerV = { hidden: {}, visible: { transition: { staggerChildren: 0.08 } } } as const;

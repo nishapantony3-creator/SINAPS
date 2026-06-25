@@ -8,7 +8,7 @@ export default function TopBar() {
         <span className="sep">·</span>
         <span>Pre KG to 5th Std</span>
         <span className="sep">·</span>
-        <span>CBSE & ICSE Based</span>
+        <span>CBSE Integrated</span>
         <span className="sep">·</span>
         <a href="tel:+916380656434">
           <i className="ti ti-phone-call" style={{ marginRight: 4 }}></i>

@@ -3,11 +3,29 @@ import Image from "next/image";
 
 export default function PhotoMarquee() {
   const images = [
-    "/scroll-img-1.png",
-    "/scroll-img-2.png",
-    "/scroll-img-3.png",
-    "/scroll-img-4.png",
-    "/scroll-img-5.png",
+    "/marquee/DSC00059.JPG",
+    "/marquee/DSC00097.JPG",
+    "/marquee/DSC00108.JPG",
+    "/marquee/DSC00120.JPG",
+    "/marquee/DSC09202.JPG",
+    "/marquee/DSC09214.JPG",
+    "/marquee/DSC09558.JPG",
+    "/marquee/DSC09928.JPG",
+    "/marquee/IMG-20260221-WA0029.jpg",
+    "/marquee/IMG-20260221-WA0040.jpg",
+    "/marquee/IMG-20260221-WA0046.jpg",
+    "/marquee/IMG-20260221-WA0048.jpg",
+    "/marquee/IMG-20260221-WA0071.jpg",
+    "/marquee/IMG-20260221-WA0100.jpg",
+    "/marquee/IMG-20260221-WA0110.jpg",
+    "/marquee/IMG-20260221-WA0120.jpg",
+    "/marquee/IMG-20260221-WA0121.jpg",
+    "/marquee/IMG-20260221-WA0122.jpg",
+    "/marquee/IMG-20260221-WA0124.jpg",
+    "/marquee/IMG-20260221-WA0133.jpg",
+    "/marquee/IMG-20260222-WA0030.jpg",
+    "/marquee/IMG-20260222-WA0051.jpg",
+    "/marquee/IMG-20260224-WA0024.jpg",
   ];
 
   // Double the images to create a seamless infinite scroll loop

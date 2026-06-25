@@ -17,7 +17,7 @@ export default function Footer() {
             </div>
             <p className="footer-desc">St. Ignatius Nursery & Primary School</p>
             <p className="footer-meta">Budapadi · Erode · Tamil Nadu</p>
-            <p className="footer-meta">CBSE & ICSE Based · Pre KG to 5th Std</p>
+            <p className="footer-meta">CBSE Integrated · Pre KG to 5th Std</p>
             <div className="footer-socials">
               <a href="https://www.instagram.com/sinaps_school_budapadi" target="_blank" rel="noopener noreferrer" className="footer-social" aria-label="Instagram"><i className="ti ti-brand-instagram"></i></a>
               <a href="https://www.youtube.com/@sinapsschool" target="_blank" rel="noopener noreferrer" className="footer-social" aria-label="YouTube"><i className="ti ti-brand-youtube"></i></a>
@@ -42,7 +42,7 @@ export default function Footer() {
               <li><a href="#academics">Lower Primary</a></li>
               <li><a href="#academics">Upper Primary (3–5)</a></li>
               <li><a href="#academics">CBSE Curriculum</a></li>
-              <li><a href="#academics">ICSE Curriculum</a></li>
+              <li><a href="#academics">State Board</a></li>
             </ul>
           </div>
 

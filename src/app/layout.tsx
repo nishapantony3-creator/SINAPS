@@ -18,8 +18,8 @@ const inter = Inter({
 
 export const metadata: Metadata = {
   title: "St. Ignatius Nursery & Primary School | SINAPS Budapadi",
-  description: "SINAPS in Budapadi, Erode — Joyful, student-centered CBSE & ICSE based primary education from Pre KG to 5th Standard. Admissions open 2026-2027.",
-  keywords: ["SINAPS School", "St Ignatius Budapadi", "Nursery School Erode", "Primary School Anthiyur", "CBSE Budapadi", "ICSE Erode", "Admissions 2026"],
+  description: "SINAPS in Budapadi, Erode — Joyful, student-centered CBSE integrated primary education from Pre KG to 5th Standard. Admissions open 2026-2027.",
+  keywords: ["SINAPS School", "St Ignatius Budapadi", "Nursery School Erode", "Primary School Anthiyur", "CBSE Budapadi", "Admissions 2026"],
   openGraph: {
     title: "SINAPS — St. Ignatius Nursery & Primary School",
     description: "Joyful, premium education in Budapadi, Erode. Admissions open for Pre KG to 5th Standard.",

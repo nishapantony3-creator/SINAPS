@@ -35,7 +35,7 @@ export default function HeroSection() {
           </motion.h1>
 
           <motion.p className="hero-desc" variants={item}>
-            St. Ignatius Nursery & Primary School — A joyful, safe, and inspiring English medium school with CBSE & ICSE based education from Pre KG to 5th Standard.
+            St. Ignatius Nursery & Primary School — A joyful, safe, and inspiring English medium school with CBSE integrated education from Pre KG to 5th Standard.
           </motion.p>
 
           <motion.div className="hero-buttons" variants={item}>
@@ -47,7 +47,7 @@ export default function HeroSection() {
 
           <motion.div className="hero-pills" variants={item}>
             <span className="hero-pill">📚 Pre KG – 5th Std</span>
-            <span className="hero-pill">✅ CBSE & ICSE</span>
+            <span className="hero-pill">✅ CBSE Integrated</span>
             <span className="hero-pill">📍 Budapadi, Erode</span>
           </motion.div>
         </motion.div>

@@ -9,7 +9,7 @@ export default function Section6Admissions() {
     "Safe & Nurturing Environment",
     "Passionate, Qualified Educators",
     "Modern School Facilities",
-    "CBSE & ICSE Based Syllabus",
+    "CBSE Integrated Syllabus",
   ];
 
   return (
@@ -21,7 +21,7 @@ export default function Section6Admissions() {
           </div>
           <h2>Give your child<br />the best <span style={{ color: "var(--orange)" }}>beginning</span> 🌟</h2>
           <div className="gradient-line" />
-          <p className="section-desc">Limited seats for Pre KG to 5th Standard. English medium. CBSE & ICSE based. Budapadi, Erode.</p>
+          <p className="section-desc">Limited seats for Pre KG to 5th Standard. English medium. CBSE Integrated. Budapadi, Erode.</p>
         </div>
 
         <div className="admissions-layout">

@@ -3,6 +3,7 @@
 import React from "react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import Link from "next/link";
 import TopBar from "@/components/TopBar";
 import FloatingShapes from "@/components/FloatingShapes";
 import { motion } from "framer-motion";
@@ -37,9 +38,10 @@ export default function FeesPage() {
             
             {/* School Fees */}
             <motion.div className="fee-card card-blue" variants={item}>
-              <div className="fee-icon">🎓</div>
-              <h3>School Tuition Fees</h3>
-              <p className="fee-desc">Includes term fees, library access, and standard curriculum materials.</p>
+              <Link href="/fees/school" style={{ textDecoration: 'none', color: 'inherit', display: 'block' }}>
+                <div className="fee-icon">🎓</div>
+                <h3>School Tuition Fees</h3>
+                <p className="fee-desc">Includes term fees, library access, and standard curriculum materials.</p>
               <div className="fee-price">
                 <span className="amount">₹18,500</span>
                 <span className="period">/ term</span>
@@ -49,54 +51,61 @@ export default function FeesPage() {
                 <li><i className="ti ti-check"></i> Term Examinations</li>
                 <li><i className="ti ti-check"></i> Digital Classroom Access</li>
               </ul>
+              </Link>
             </motion.div>
 
             {/* Book Fees */}
             <motion.div className="fee-card card-orange" variants={item}>
-              <div className="fee-icon">📚</div>
-              <h3>Book & Stationery Fees</h3>
-              <p className="fee-desc">Complete set of CBSE/ICSE textbooks, notebooks, and learning kits.</p>
-              <div className="fee-price">
-                <span className="amount">₹4,200</span>
-                <span className="period">/ year</span>
-              </div>
+              <Link href="/fees/book" style={{ textDecoration: 'none', color: 'inherit', display: 'block' }}>
+                <div className="fee-icon">📚</div>
+                <h3>Book & Stationery Fees</h3>
+                <p className="fee-desc">Complete set of CBSE textbooks, notebooks, and learning kits.</p>
+                <div className="fee-price">
+                  <span className="amount">₹1,500</span>
+                  <span className="period">/ year</span>
+                </div>
               <ul className="fee-features">
                 <li><i className="ti ti-check"></i> All Textbooks</li>
                 <li><i className="ti ti-check"></i> School Notebooks</li>
                 <li><i className="ti ti-check"></i> Art & Craft Supplies</li>
               </ul>
+              </Link>
             </motion.div>
 
             {/* Bus Fees */}
             <motion.div className="fee-card card-green" variants={item}>
-              <div className="fee-icon">🚌</div>
-              <h3>School Bus Transport</h3>
-              <p className="fee-desc">Safe, GPS-tracked transportation across Budapadi and Erode areas.</p>
-              <div className="fee-price">
-                <span className="amount">₹3,500</span>
-                <span className="period">/ term</span>
-              </div>
+              <Link href="/fees/bus" style={{ textDecoration: 'none', color: 'inherit', display: 'block' }}>
+                <div className="fee-icon">🚌</div>
+                <h3>School Bus Transport</h3>
+                <p className="fee-desc">Safe, GPS-tracked transportation across Budapadi and Erode areas. (Note: based on distance)</p>
+                <div className="fee-price">
+                  <span className="amount">₹3,500</span>
+                  <span className="period">/ term</span>
+                </div>
               <ul className="fee-features">
                 <li><i className="ti ti-check"></i> GPS Tracking App</li>
                 <li><i className="ti ti-check"></i> Female Attendant on Board</li>
                 <li><i className="ti ti-check"></i> AC & Non-AC Options</li>
               </ul>
+              </Link>
             </motion.div>
 
             {/* Activity Fees */}
             <motion.div className="fee-card card-pink" variants={item}>
-              <div className="fee-icon">🎨</div>
-              <h3>Extracurricular Activities</h3>
-              <p className="fee-desc">Sports, music, arts, and special events throughout the year.</p>
-              <div className="fee-price">
-                <span className="amount">₹2,000</span>
-                <span className="period">/ year</span>
-              </div>
+              <Link href="/fees/activity" style={{ textDecoration: 'none', color: 'inherit', display: 'block' }}>
+                <div className="fee-icon">🎨</div>
+                <h3>Extracurricular Activities</h3>
+                <p className="fee-desc">Sports, music, arts, and special events throughout the year.</p>
+                <div className="fee-price">
+                  <span className="amount">₹2,000</span>
+                  <span className="period">/ year</span>
+                </div>
               <ul className="fee-features">
                 <li><i className="ti ti-check"></i> Weekly Sports Coaching</li>
                 <li><i className="ti ti-check"></i> Music & Dance Classes</li>
                 <li><i className="ti ti-check"></i> Annual Day & Field Trips</li>
               </ul>
+              </Link>
             </motion.div>
 
           </motion.div>
