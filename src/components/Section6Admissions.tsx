@@ -24,29 +24,16 @@ export default function Section6Admissions() {
           <p className="section-desc">Limited seats for Pre KG to 5th Standard. English medium. CBSE Integrated. Budapadi, Erode.</p>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '24px', maxWidth: '1000px', margin: '0 auto 50px auto' }}>
-          <div style={{ borderRadius: '16px', overflow: 'hidden', boxShadow: 'var(--shadow-card)', aspectRatio: '16/9' }}>
-            <iframe 
-              width="100%" 
-              height="100%" 
-              src="https://www.youtube.com/embed/mNdieimHAVc?autoplay=0" 
-              title="SINAPS Admission Promotion" 
-              frameBorder="0" 
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
-              allowFullScreen
-            ></iframe>
-          </div>
-          <div style={{ borderRadius: '16px', overflow: 'hidden', boxShadow: 'var(--shadow-card)', aspectRatio: '16/9' }}>
-            <iframe 
-              width="100%" 
-              height="100%" 
-              src="https://www.youtube.com/embed/HzX-UwsBjnw?autoplay=0" 
-              title="SINAPS Drone View" 
-              frameBorder="0" 
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
-              allowFullScreen
-            ></iframe>
-          </div>
+        <div style={{ marginBottom: '40px', borderRadius: '16px', overflow: 'hidden', boxShadow: 'var(--shadow-card)', aspectRatio: '16/9', maxWidth: '800px', margin: '0 auto 50px auto' }}>
+          <iframe 
+            width="100%" 
+            height="100%" 
+            src="https://www.youtube.com/embed/mNdieimHAVc?autoplay=0" 
+            title="SINAPS Admission Promotion" 
+            frameBorder="0" 
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+            allowFullScreen
+          ></iframe>
         </div>
 
         <div className="admissions-layout">
