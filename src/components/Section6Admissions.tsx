@@ -17,7 +17,7 @@ export default function Section6Admissions() {
       <div className="section-container">
         <div className="section-header centered">
           <div className="section-eyebrow" style={{ background: "var(--orange-light)", color: "var(--orange)" }}>
-            <span>🎒</span> ADMISSIONS OPEN · 2026–2027
+            <span>🎒</span> ADMISSIONS OPEN FOR VIJAYADHASAMI
           </div>
           <h2>Give your child<br />the best <span style={{ color: "var(--orange)" }}>beginning</span> 🌟</h2>
           <div className="gradient-line" />
@@ -28,7 +28,7 @@ export default function Section6Admissions() {
           <iframe 
             width="100%" 
             height="100%" 
-            src="https://www.youtube.com/embed/sj_xbLOVHik?autoplay=0" 
+            src="https://www.youtube.com/embed/mNdieimHAVc?autoplay=0" 
             title="SINAPS Admission Promotion" 
             frameBorder="0" 
             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 

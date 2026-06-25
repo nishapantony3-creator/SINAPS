@@ -53,7 +53,7 @@ export default function Footer() {
               <li><a href="mailto:sinapsschool@yahoo.com"><i className="ti ti-mail" style={{ color: "var(--orange)" }}></i> sinapsschool@yahoo.com</a></li>
               <li className="address"><i className="ti ti-map-pin" style={{ color: "var(--orange)" }}></i><span>Budapadi, Anthiyur Taluk,<br />Erode District - 638 311,<br />Tamil Nadu, India</span></li>
             </ul>
-            <div className="footer-badge">🎒 Admissions Open: 2026–2027</div>
+            <div className="footer-badge">🎒 Admissions Open for Vijayadhasami</div>
           </div>
         </div>
 

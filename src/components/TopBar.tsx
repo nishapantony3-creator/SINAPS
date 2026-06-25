@@ -4,7 +4,7 @@ export default function TopBar() {
   return (
     <div className="top-bar">
       <div className="top-bar-inner">
-        <span>🌟 Admissions Open 2026–27</span>
+        <span>🌟 Admissions Open for Vijayadhasami</span>
         <span className="sep">·</span>
         <span>Pre KG to 5th Std</span>
         <span className="sep">·</span>

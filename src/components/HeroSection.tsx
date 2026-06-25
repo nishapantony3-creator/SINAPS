@@ -27,7 +27,7 @@ export default function HeroSection() {
         <motion.div className="hero-content" variants={container} initial="hidden" whileInView="visible" viewport={{ once: true }}>
           <motion.div className="hero-badge" variants={item}>
             <span className="emoji">⭐</span>
-            Admissions Open 2026–2027
+            Admissions Open for Vijayadhasami
           </motion.div>
 
           <motion.h1 className="hero-title" variants={item}>
@@ -42,7 +42,7 @@ export default function HeroSection() {
             <a href="https://wa.me/916380656434?text=Hello,%20I%20would%20like%20to%20inquire%20about%20admissions%20for%202026-2027" target="_blank" rel="noopener noreferrer" className="btn-primary">
               <i className="ti ti-brand-whatsapp" style={{ fontSize: "1.2rem", verticalAlign: "middle", marginRight: "8px" }}></i>Enquire on WhatsApp
             </a>
-            <a href="https://youtu.be/sj_xbLOVHik" target="_blank" rel="noopener noreferrer" className="btn-secondary">
+            <a href="https://youtu.be/mNdieimHAVc" target="_blank" rel="noopener noreferrer" className="btn-secondary">
               <i className="ti ti-player-play-filled"></i> Watch School Tour
             </a>
           </motion.div>
