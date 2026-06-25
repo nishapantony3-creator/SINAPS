@@ -20,7 +20,7 @@ export default function Footer() {
             <p className="footer-meta">CBSE Integrated · Pre KG to 5th Std</p>
             <div className="footer-socials">
               <a href="https://www.instagram.com/sinaps_school_budapadi" target="_blank" rel="noopener noreferrer" className="footer-social" aria-label="Instagram"><i className="ti ti-brand-instagram"></i></a>
-              <a href="https://www.youtube.com/@sinapsschool" target="_blank" rel="noopener noreferrer" className="footer-social" aria-label="YouTube"><i className="ti ti-brand-youtube"></i></a>
+              <a href="https://www.youtube.com/@SINAPS-school" target="_blank" rel="noopener noreferrer" className="footer-social" aria-label="YouTube"><i className="ti ti-brand-youtube"></i></a>
             </div>
           </div>
 
@@ -31,7 +31,7 @@ export default function Footer() {
               <li><a href="#why">About Us</a></li>
               <li><a href="#academics">Academics</a></li>
               <li><a href="#admissions">Admissions 2026</a></li>
-              <li><a href="https://www.youtube.com/@sinapsschool" target="_blank" rel="noopener noreferrer">YouTube</a></li>
+              <li><a href="https://www.youtube.com/@SINAPS-school" target="_blank" rel="noopener noreferrer">YouTube</a></li>
             </ul>
           </div>
 

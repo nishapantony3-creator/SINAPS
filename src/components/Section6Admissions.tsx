@@ -70,8 +70,8 @@ export default function Section6Admissions() {
               <a href="https://www.instagram.com/sinaps_school_budapadi" target="_blank" rel="noopener noreferrer" className="social-link ig">
                 <i className="ti ti-brand-instagram"></i> @sinaps_school_budapadi
               </a>
-              <a href="https://www.youtube.com/@sinapsschool" target="_blank" rel="noopener noreferrer" className="social-link yt">
-                <i className="ti ti-brand-youtube"></i> @sinaps school
+              <a href="https://www.youtube.com/@SINAPS-school" target="_blank" rel="noopener noreferrer" className="social-link yt">
+                <i className="ti ti-brand-youtube"></i> @SINAPS-school
               </a>
             </div>
           </div>
