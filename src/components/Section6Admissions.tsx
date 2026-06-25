@@ -24,6 +24,18 @@ export default function Section6Admissions() {
           <p className="section-desc">Limited seats for Pre KG to 5th Standard. English medium. CBSE Integrated. Budapadi, Erode.</p>
         </div>
 
+        <div style={{ marginBottom: '40px', borderRadius: '16px', overflow: 'hidden', boxShadow: 'var(--shadow-card)', aspectRatio: '16/9', maxWidth: '800px', margin: '0 auto 50px auto' }}>
+          <iframe 
+            width="100%" 
+            height="100%" 
+            src="https://www.youtube.com/embed/sj_xbLOVHik?autoplay=0" 
+            title="SINAPS Admission Promotion" 
+            frameBorder="0" 
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+            allowFullScreen
+          ></iframe>
+        </div>
+
         <div className="admissions-layout">
           <motion.div className="admissions-card" initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ type: "spring" as const, stiffness: 90, damping: 15 }}>
             <h3 className="enroll-title">Ready to enroll? 🎓</h3>
