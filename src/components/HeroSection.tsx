@@ -39,7 +39,9 @@ export default function HeroSection() {
           </motion.p>
 
           <motion.div className="hero-buttons" variants={item}>
-            <a href="#admissions" className="btn-primary">Apply for Admission 2026</a>
+            <a href="https://wa.me/916380656434?text=Hello,%20I%20would%20like%20to%20inquire%20about%20admissions%20for%202026-2027" target="_blank" rel="noopener noreferrer" className="btn-primary">
+              <i className="ti ti-brand-whatsapp" style={{ fontSize: "1.2rem", verticalAlign: "middle", marginRight: "8px" }}></i>Enquire on WhatsApp
+            </a>
             <a href="https://www.youtube.com/@sinapsschool" target="_blank" rel="noopener noreferrer" className="btn-secondary">
               <i className="ti ti-player-play-filled"></i> Watch School Tour
             </a>

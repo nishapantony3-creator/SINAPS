@@ -37,7 +37,9 @@ export default function Navbar() {
         </div>
 
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          <a href="/#admissions" className="btn-primary navbar-cta">Enroll Now →</a>
+          <a href="https://wa.me/916380656434?text=Hello,%20I%20would%20like%20to%20inquire%20about%20admissions%20for%202026-2027" target="_blank" rel="noopener noreferrer" className="btn-primary navbar-cta">
+            <i className="ti ti-brand-whatsapp" style={{ fontSize: "1.1rem", verticalAlign: "middle", marginRight: "4px" }}></i>Enquire on WhatsApp
+          </a>
           <button className="navbar-toggle" onClick={() => setMenuOpen(!menuOpen)} aria-label="Menu">
             <i className={`ti ${menuOpen ? "ti-x" : "ti-menu-2"}`}></i>
           </button>
@@ -49,7 +51,9 @@ export default function Navbar() {
           {links.map((l) => (
             <a key={l.name} href={l.href} className="mobile-drawer-link" onClick={() => setMenuOpen(false)}>{l.name}</a>
           ))}
-          <a href="/#admissions" className="btn-primary mobile-drawer-cta" onClick={() => setMenuOpen(false)}>Enroll Now →</a>
+          <a href="https://wa.me/916380656434?text=Hello,%20I%20would%20like%20to%20inquire%20about%20admissions%20for%202026-2027" target="_blank" rel="noopener noreferrer" className="btn-primary mobile-drawer-cta" onClick={() => setMenuOpen(false)}>
+            <i className="ti ti-brand-whatsapp" style={{ fontSize: "1.1rem", verticalAlign: "middle", marginRight: "4px" }}></i>Enquire on WhatsApp
+          </a>
         </div>
       </div>
     </nav>

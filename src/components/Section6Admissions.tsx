@@ -28,7 +28,9 @@ export default function Section6Admissions() {
           <motion.div className="admissions-card" initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ type: "spring" as const, stiffness: 90, damping: 15 }}>
             <h3 className="enroll-title">Ready to enroll? 🎓</h3>
             <p className="enroll-sub">Join the SINAPS family today</p>
-            <a href="mailto:sinapsschool@yahoo.com?subject=Admission%20Inquiry%202026-2027" className="btn-primary enroll-btn">Apply for Admission 2026</a>
+            <a href="https://wa.me/916380656434?text=Hello,%20I%20would%20like%20to%20inquire%20about%20admissions%20for%202026-2027" target="_blank" rel="noopener noreferrer" className="btn-primary enroll-btn">
+              <i className="ti ti-brand-whatsapp" style={{ fontSize: "1.2rem", verticalAlign: "middle", marginRight: "8px" }}></i>Enquire on WhatsApp
+            </a>
             <div className="or-text">or contact us directly</div>
             <a href="tel:+916380656434" className="phone-btn">
               <i className="ti ti-phone-call"></i> +91 63806 56434
