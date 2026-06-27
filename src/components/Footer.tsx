@@ -60,10 +60,10 @@ export default function Footer() {
         <hr className="footer-divider" />
         <div className="footer-bottom">
           <p className="footer-copy">© {new Date().getFullYear()} SINAPS — St. Ignatius Nursery & Primary School. All rights reserved.</p>
-          <div className="footer-bottom-links">
-            <a href="#">Privacy Policy</a>
+        <div className="footer-bottom-links">
+            <a href="/privacy-policy">Privacy Policy</a>
             <span className="dot">·</span>
-            <a href="#">Terms</a>
+            <a href="/terms-of-service">Terms</a>
           </div>
         </div>
       </div>
