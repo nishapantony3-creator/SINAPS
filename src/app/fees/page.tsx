@@ -77,15 +77,15 @@ export default function FeesPage() {
               <Link href="/fees/bus" style={{ textDecoration: 'none', color: 'inherit', display: 'block' }}>
                 <div className="fee-icon">🚌</div>
                 <h3>School Bus Transport</h3>
-                <p className="fee-desc">Safe, GPS-tracked transportation across Budapadi and Erode areas. (Note: based on distance)</p>
+                <p className="fee-desc">Safe transportation across Budapadi and Erode areas. (Note: based on distance)</p>
                 <div className="fee-price">
-                  <span className="amount">₹3,500</span>
+                  <span className="amount">₹1,500</span>
                   <span className="period">/ term</span>
                 </div>
               <ul className="fee-features">
-                <li><i className="ti ti-check"></i> GPS Tracking App</li>
+                <li><i className="ti ti-check"></i> Safe & Comfortable Seating</li>
                 <li><i className="ti ti-check"></i> Female Attendant on Board</li>
-                <li><i className="ti ti-check"></i> AC & Non-AC Options</li>
+                <li><i className="ti ti-check"></i> Experienced Drivers</li>
               </ul>
               </Link>
             </motion.div>
