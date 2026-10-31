@@ -59,6 +59,81 @@
     "ratio": "1:17",
     "passRate": "100%"
   },
+  "fees": {
+    "overview": {
+      "tuition": {
+        "title": "School Tuition Fees",
+        "amount": "₹18,500",
+        "period": "/ term",
+        "desc": "Includes term fees, library access, and standard curriculum materials.",
+        "features": [
+          "Core Academic Syllabus",
+          "Term Examinations",
+          "Digital Classroom Access"
+        ]
+      },
+      "book": {
+        "title": "Book & Stationery Fees",
+        "amount": "₹1,500",
+        "period": "/ year",
+        "desc": "Complete set of CBSE textbooks, notebooks, and learning kits.",
+        "features": [
+          "All Textbooks",
+          "School Notebooks",
+          "Art & Craft Supplies"
+        ]
+      },
+      "bus": {
+        "title": "School Bus Transport",
+        "amount": "₹1,500",
+        "period": "/ term",
+        "desc": "Safe transportation across Budapadi and Erode areas. (Note: based on distance)",
+        "features": [
+          "Safe & Comfortable Seating",
+          "Female Attendant on Board",
+          "Experienced Drivers"
+        ]
+      },
+      "activity": {
+        "title": "Extracurricular Activities",
+        "amount": "₹2,000",
+        "period": "/ year",
+        "desc": "Sports, music, arts, and special events throughout the year.",
+        "features": [
+          "Weekly Sports Coaching",
+          "Music & Dance Classes",
+          "Annual Day & Field Trips"
+        ]
+      },
+      "note": "Note: Fees are subject to minor adjustments based on the specific grade (Pre-KG vs 5th Std). Please contact the admissions office at +91 63806 56434 for a personalized fee breakdown for your child."
+    },
+    "classList": [
+      {
+        "standard": "LKG",
+        "amount": "19,800"
+      },
+      {
+        "standard": "UKG",
+        "amount": "20,350"
+      },
+      {
+        "standard": "I",
+        "amount": "20,900"
+      },
+      {
+        "standard": "II",
+        "amount": "21,450"
+      },
+      {
+        "standard": "III",
+        "amount": "22,000"
+      },
+      {
+        "standard": "IV & V",
+        "amount": "23,100"
+      }
+    ]
+  },
   "teachers": [
     {
       "name": "Mrs. Anitha R.",
@@ -112,46 +187,12 @@
     }
   ],
   "students": {
-    "total": "170 Happy Students",
-    "prePrimary": "LKG & UKG",
-    "primary": "Classes I to V"
-  },
-  "fees": {
-    "tuition": [
-      {
-        "standard": "Pre-KG, LKG, UKG",
-        "amount": "₹15,000",
-        "term": "per term"
-      },
-      {
-        "standard": "Class 1 to 3",
-        "amount": "₹18,000",
-        "term": "per term"
-      },
-      {
-        "standard": "Class 4 & 5",
-        "amount": "₹20,000",
-        "term": "per term"
-      }
-    ],
-    "bus": [
-      {
-        "route": "Budapadi Local (0 – 3 KM)",
-        "amount": "₹4,500",
-        "term": "per term"
-      },
-      {
-        "route": "Anthiyur / Ammapettai (3 – 8 KM)",
-        "amount": "₹6,500",
-        "term": "per term"
-      },
-      {
-        "route": "Outer Limits (8+ KM)",
-        "amount": "₹8,500",
-        "term": "per term"
-      }
-    ],
-    "note": "Fees are subject to minor adjustments based on the specific grade. Please contact the admissions office at +91 63806 56434 for a personalized fee breakdown for your child."
+    "totalCount": "170 Happy Students",
+    "desc": "Our diverse student body spans from Pre-KG to 5th Standard, learning and growing in a joyful, student-centered environment.",
+    "prePrimaryLabel": "Pre-Primary",
+    "prePrimarySub": "LKG & UKG",
+    "primaryLabel": "Primary",
+    "primarySub": "Classes I to V"
   },
   "contact": {
     "schoolName": "St. Ignatius Nursery & Primary School",

@@ -5,8 +5,17 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import TopBar from "@/components/TopBar";
 import FloatingShapes from "@/components/FloatingShapes";
+import siteContent from "@/data/siteContent.json";
 
 export default function ActivityFeesPage() {
+  const activity = siteContent.fees?.overview?.activity || {
+    title: "Extracurricular Activities",
+    amount: "₹2,000",
+    period: "/ year",
+    desc: "Sports, music, arts, and special events throughout the year.",
+    features: ["Weekly Sports Coaching", "Music & Dance Classes", "Annual Day & Field Trips"]
+  };
+
   return (
     <>
       <TopBar />
@@ -15,14 +24,16 @@ export default function ActivityFeesPage() {
       
       <main className="fees-page" style={{ paddingTop: '150px', paddingBottom: '100px', minHeight: '80vh' }}>
         <div className="section-container">
-          <h1 style={{ color: '#fff', textAlign: 'center', marginBottom: '20px' }}>Extracurricular Activities</h1>
-          <div style={{ maxWidth: '600px', margin: '0 auto', background: '#fff', borderRadius: '15px', padding: '30px', color: '#333' }}>
-            <h2 style={{ color: 'var(--pink)', marginBottom: '15px' }}>₹2,000 / year</h2>
-            <p style={{ fontSize: '1.1rem', marginBottom: '20px' }}>Sports, music, arts, and special events throughout the year.</p>
+          <h1 style={{ color: '#fff', textAlign: 'center', marginBottom: '20px' }}>{activity.title}</h1>
+          <div style={{ maxWidth: '600px', margin: '0 auto', background: '#fff', borderRadius: '15px', padding: '30px', color: '#333', boxShadow: 'var(--shadow-card)' }}>
+            <h2 style={{ color: 'var(--pink)', marginBottom: '15px' }}>{activity.amount} {activity.period}</h2>
+            <p style={{ fontSize: '1.1rem', marginBottom: '20px' }}>{activity.desc}</p>
             <ul style={{ listStyle: 'none', padding: 0 }}>
-              <li style={{ padding: '10px 0', borderBottom: '1px solid #eee' }}>✅ Weekly Sports Coaching</li>
-              <li style={{ padding: '10px 0', borderBottom: '1px solid #eee' }}>✅ Music & Dance Classes</li>
-              <li style={{ padding: '10px 0' }}>✅ Annual Day & Field Trips</li>
+              {activity.features.map((feat, idx) => (
+                <li key={idx} style={{ padding: '10px 0', borderBottom: idx === activity.features.length - 1 ? 'none' : '1px solid #eee' }}>
+                  ✅ {feat}
+                </li>
+              ))}
             </ul>
           </div>
         </div>

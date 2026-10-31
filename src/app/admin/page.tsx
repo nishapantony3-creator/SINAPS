@@ -44,22 +44,37 @@ interface TeacherItem {
   role?: string;
 }
 
-interface TuitionSlab {
-  standard: string;
+interface FeeOverviewCard {
+  title: string;
   amount: string;
-  term?: string;
+  period: string;
+  desc: string;
+  features: string[];
 }
 
-interface BusSlab {
-  route: string;
+interface FeeClassItem {
+  standard: string;
   amount: string;
-  term?: string;
 }
 
 interface FeesConfig {
-  tuition: TuitionSlab[];
-  bus: BusSlab[];
-  note?: string;
+  overview: {
+    tuition: FeeOverviewCard;
+    book: FeeOverviewCard;
+    bus: FeeOverviewCard;
+    activity: FeeOverviewCard;
+    note?: string;
+  };
+  classList: FeeClassItem[];
+}
+
+interface StudentsConfig {
+  totalCount: string;
+  desc: string;
+  prePrimaryLabel: string;
+  prePrimarySub: string;
+  primaryLabel: string;
+  primarySub: string;
 }
 
 interface ContactConfig {
@@ -77,11 +92,7 @@ interface SiteContent {
   popupAlert: PopupConfig;
   stats: StatsConfig;
   teachers: TeacherItem[];
-  students: {
-    total: string;
-    prePrimary: string;
-    primary: string;
-  };
+  students: StudentsConfig;
   fees: FeesConfig;
   contact: ContactConfig;
 }
@@ -93,9 +104,17 @@ export default function AdminPage() {
 
   const [content, setContent] = useState<SiteContent | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [activeTab, setActiveTab] = useState<string>("photos");
+  
+  // Tabs: 'fees' | 'photos' | 'home' | 'teachers' | 'students' | 'popup' | 'contact'
+  const [activeTab, setActiveTab] = useState<string>("fees");
+  
+  // Device Mode
   const [deviceMode, setDeviceMode] = useState<"desktop" | "tablet" | "mobile">("desktop");
-  const [highlightedSection, setHighlightedSection] = useState<string | null>("live-marquee");
+  
+  // Live Preview Page Switcher: 'home' | 'fees' | 'school-fees' | 'teachers' | 'students'
+  const [previewPage, setPreviewPage] = useState<"home" | "fees" | "school-fees" | "teachers" | "students">("fees");
+
+  const [highlightedSection, setHighlightedSection] = useState<string | null>("live-fees");
   
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [isPublishing, setIsPublishing] = useState<boolean>(false);
@@ -115,6 +134,8 @@ export default function AdminPage() {
       const json = await res.json();
       if (json.success && json.data) {
         setContent(json.data);
+      } else {
+        showToast("Error loading content");
       }
     } catch (err) {
       console.error("Failed to load content:", err);
@@ -124,15 +145,8 @@ export default function AdminPage() {
     }
   }, [showToast]);
 
-  const fetchPhotos = useCallback(async () => {
-    try {
-      await fetch("/api/admin/photos");
-    } catch (err) {
-      console.error("Failed to list photos:", err);
-    }
-  }, []);
-
   useEffect(() => {
+    // Dynamic Tailwind Loader Safeguard
     if (typeof window !== "undefined") {
       const existingScript = document.getElementById("sinaps-tailwind-cdn");
       if (!existingScript) {
@@ -153,8 +167,7 @@ export default function AdminPage() {
       setIsAuthenticated(true);
     }
     fetchContent();
-    fetchPhotos();
-  }, [fetchContent, fetchPhotos]);
+  }, [fetchContent]);
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
@@ -163,19 +176,36 @@ export default function AdminPage() {
       setIsAuthenticated(true);
       setPinError("");
       fetchContent();
-      fetchPhotos();
     } else {
       setPinError("Invalid Admin PIN. Please check and try again.");
     }
   };
 
   const handleLogout = () => {
-    localStorage.removeItem("sinaps_admin_pin");
+    if (typeof window !== "undefined") {
+      localStorage.removeItem("sinaps_admin_pin");
+    }
     setIsAuthenticated(false);
+    setPinInput("");
   };
 
-  const saveContent = async () => {
+  const locateSection = (sectionId: string, pageName?: "home" | "fees" | "school-fees" | "teachers" | "students") => {
+    if (pageName) {
+      setPreviewPage(pageName);
+    }
+    setHighlightedSection(sectionId);
+    setTimeout(() => {
+      const el = document.getElementById(sectionId);
+      if (el && previewScrollRef.current) {
+        el.scrollIntoView({ behavior: "smooth", block: "center" });
+      }
+    }, 150);
+  };
+
+  // --- Handlers for Content Modifications ---
+  const handleSaveDraft = async () => {
     if (!content) return;
+    showToast("💾 Saving changes...");
     try {
       const res = await fetch("/api/admin/content", {
         method: "POST",
@@ -184,78 +214,18 @@ export default function AdminPage() {
       });
       const json = await res.json();
       if (json.success) {
-        showToast("✅ Changes saved to local configuration!");
+        showToast("✅ Changes saved successfully!");
       } else {
         showToast("❌ " + (json.error || "Save failed"));
       }
-    } catch (err) {
-      console.error("Failed to save:", err);
-      showToast("❌ Network error while saving");
-    }
-  };
-
-  const locateSection = (sectionId: string) => {
-    setHighlightedSection(sectionId);
-    setTimeout(() => {
-      const el = document.getElementById(sectionId);
-      if (el) {
-        el.scrollIntoView({ behavior: "smooth", block: "center" });
-      }
-    }, 100);
-
-    setTimeout(() => {
-      setHighlightedSection((prev) => (prev === sectionId ? null : prev));
-    }, 4000);
-  };
-
-  const handleTabChange = (tab: string) => {
-    setActiveTab(tab);
-    if (tab === "photos") locateSection("live-marquee");
-    else if (tab === "announcements") locateSection("live-topbar");
-    else if (tab === "popup") locateSection("live-popup");
-    else if (tab === "stats") locateSection("live-stats");
-    else if (tab === "fees") locateSection("live-fees");
-    else if (tab === "contact") locateSection("live-footer");
-  };
-
-  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    setIsUploading(true);
-    showToast("⏳ Compressing and uploading photo with Sharp...");
-
-    try {
-      const fd = new FormData();
-      fd.append("pin", "sinaps2026");
-      fd.append("file", file);
-
-      const res = await fetch("/api/admin/photos", {
-        method: "POST",
-        body: fd,
-      });
-      const json = await res.json();
-      if (json.success) {
-        showToast("🎉 Photo uploaded & added to marquee!");
-        await fetchContent();
-        await fetchPhotos();
-        locateSection("live-marquee");
-      } else {
-        showToast("❌ " + (json.error || "Upload failed"));
-      }
-    } catch (err) {
-      console.error("Upload error:", err);
-      showToast("❌ Upload error occurred");
-    } finally {
-      setIsUploading(false);
-      e.target.value = "";
+    } catch {
+      showToast("❌ Failed to save changes");
     }
   };
 
   const handlePublishLive = async () => {
     setIsPublishing(true);
-    showToast("🚀 Syncing with GitHub & triggering Vercel build...");
-
+    showToast("🚀 Publishing live to sinaps.in...");
     try {
       await fetch("/api/admin/content", {
         method: "POST",
@@ -268,960 +238,1558 @@ export default function AdminPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           pin: "sinaps2026",
-          commitMessage: `Admin CMS update: ${new Date().toLocaleString()}`,
+          commitMessage: `Website Content Update via Admin Portal (${new Date().toLocaleTimeString()})`,
         }),
       });
-
       const json = await res.json();
       if (json.success) {
-        showToast("🌟 Published Live! https://www.sinaps.in is updating!");
+        showToast("🎉 Published live! Vercel is updating the website.");
       } else {
-        showToast("❌ Publish error: " + (json.error || "Check terminal"));
+        showToast("⚠️ " + (json.message || "Changes saved locally"));
       }
-    } catch (err) {
-      console.error("Publish error:", err);
-      showToast("❌ Network error triggering publish");
+    } catch {
+      showToast("❌ Publish error occurred");
     } finally {
       setIsPublishing(false);
     }
   };
 
+  const handleUploadPhoto = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !content) return;
+
+    setIsUploading(true);
+    showToast("⏳ Compressing and uploading photo...");
+    try {
+      const fd = new FormData();
+      fd.append("pin", "sinaps2026");
+      fd.append("file", file);
+
+      const res = await fetch("/api/admin/photos", { method: "POST", body: fd });
+      const json = await res.json();
+      if (json.success && json.url) {
+        const updatedMarquee = [json.url, ...content.marquee];
+        const updated = { ...content, marquee: updatedMarquee };
+        setContent(updated);
+        showToast("🎉 Photo uploaded & added to marquee!");
+        locateSection("live-marquee", "home");
+      } else {
+        showToast("❌ " + (json.error || "Upload failed"));
+      }
+    } catch {
+      showToast("❌ Upload error occurred");
+    } finally {
+      setIsUploading(false);
+      e.target.value = "";
+    }
+  };
+
+  // --- TEACHER EDITING HELPERS ---
+  const handleTeacherChange = (index: number, field: keyof TeacherItem, val: string) => {
+    if (!content) return;
+    const updated = [...content.teachers];
+    updated[index] = { ...updated[index], [field]: val };
+    setContent({ ...content, teachers: updated });
+  };
+
+  const handleAddTeacher = () => {
+    if (!content) return;
+    const newTeacher: TeacherItem = {
+      name: "New Teacher Name",
+      qualification: "B.Ed. / M.Sc.",
+      role: "Subject Teacher",
+    };
+    setContent({ ...content, teachers: [...content.teachers, newTeacher] });
+    showToast("➕ New teacher added! You can now edit their details.");
+    locateSection("live-teachers", "teachers");
+  };
+
+  const handleDeleteTeacher = (index: number) => {
+    if (!content) return;
+    if (confirm(`Are you sure you want to remove ${content.teachers[index]?.name}?`)) {
+      const updated = content.teachers.filter((_, i) => i !== index);
+      setContent({ ...content, teachers: updated });
+      showToast("Teacher removed");
+    }
+  };
+
+  const handleMoveTeacher = (index: number, direction: "up" | "down") => {
+    if (!content) return;
+    const teachers = [...content.teachers];
+    const targetIdx = direction === "up" ? index - 1 : index + 1;
+    if (targetIdx < 0 || targetIdx >= teachers.length) return;
+    const temp = teachers[index];
+    teachers[index] = teachers[targetIdx];
+    teachers[targetIdx] = temp;
+    setContent({ ...content, teachers });
+  };
+
+  // --- CLASS FEES HELPERS ---
+  const handleClassFeeChange = (index: number, field: keyof FeeClassItem, val: string) => {
+    if (!content) return;
+    const updated = [...content.fees.classList];
+    updated[index] = { ...updated[index], [field]: val };
+    setContent({ ...content, fees: { ...content.fees, classList: updated } });
+  };
+
+  const handleAddClassFee = () => {
+    if (!content) return;
+    const updated = [...content.fees.classList, { standard: "New Class", amount: "20,000" }];
+    setContent({ ...content, fees: { ...content.fees, classList: updated } });
+    showToast("➕ Added new class slab");
+  };
+
+  const handleDeleteClassFee = (index: number) => {
+    if (!content) return;
+    const updated = content.fees.classList.filter((_, i) => i !== index);
+    setContent({ ...content, fees: { ...content.fees, classList: updated } });
+  };
+
+  // --- OVERVIEW FEES HELPERS ---
+  const handleOverviewFeeChange = (
+    key: "tuition" | "book" | "bus" | "activity",
+    field: "amount" | "period" | "desc",
+    val: string
+  ) => {
+    if (!content) return;
+    const overview = { ...content.fees.overview };
+    overview[key] = { ...overview[key], [field]: val };
+    setContent({ ...content, fees: { ...content.fees, overview } });
+  };
+
+  // ==========================================
+  // 1. PIN AUTHENTICATION SCREEN
+  // ==========================================
   if (!isAuthenticated) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-4" style={{ background: "var(--bg-cream)" }}>
-        <div className="w-full max-w-md p-8 rounded-3xl shadow-xl border border-slate-200" style={{ background: "#ffffff" }}>
-          <div className="text-center space-y-3 mb-6">
-            <div className="w-16 h-16 mx-auto rounded-full bg-blue-100 flex items-center justify-center overflow-hidden shadow-md">
-              <Image src="/logo.png" alt="SINAPS Logo" width={56} height={56} className="rounded-full object-cover" />
-            </div>
-            <h1 style={{ fontFamily: "var(--font-heading)", color: "var(--blue-dark)", fontSize: "24px", fontWeight: 900 }}>
-              SINAPS Admin Portal
-            </h1>
-            <p className="text-xs text-slate-500 font-medium">
-              St. Ignatius Nursery & Primary School • Budapadi
-            </p>
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-[#1E3A5F] to-slate-900 flex items-center justify-center p-4">
+        <div className="w-full max-w-md bg-white rounded-3xl shadow-2xl p-8 border border-slate-100 text-center">
+          <div className="w-20 h-20 mx-auto mb-5 rounded-2xl bg-amber-50 border-2 border-amber-200 flex items-center justify-center shadow-lg">
+            <Image
+              src="/emblem.png"
+              alt="School Emblem"
+              width={64}
+              height={64}
+              className="object-contain"
+              priority
+            />
           </div>
+          <h2 className="text-2xl font-black text-slate-800 tracking-tight font-heading">
+            SINAPS Admin Portal
+          </h2>
+          <p className="text-sm text-slate-500 mt-1 mb-6 font-medium">
+            St. Ignatius Nursery & Primary School, Budapadi
+          </p>
 
           <form onSubmit={handleLogin} className="space-y-4">
-            <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1.5">Enter Admin PIN / Password</label>
+            <div className="text-left">
+              <label className="block text-xs font-bold text-slate-600 mb-1.5 uppercase tracking-wider">
+                Enter Master Security PIN
+              </label>
               <input
                 type="password"
                 value={pinInput}
                 onChange={(e) => setPinInput(e.target.value)}
-                placeholder="Enter PIN (Default: sinaps2026)"
-                className="w-full text-center tracking-widest text-lg font-bold border-2 border-slate-200 rounded-2xl p-3 focus:border-blue-500 outline-none transition-all"
+                placeholder="••••••••••"
+                className="w-full px-4 py-3.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-center text-xl tracking-widest font-mono text-slate-800 bg-slate-50"
                 autoFocus
               />
-              {pinError && <p className="text-red-500 text-xs font-semibold mt-2 text-center">{pinError}</p>}
             </div>
+
+            {pinError && (
+              <p className="text-xs text-rose-500 font-semibold bg-rose-50 p-2.5 rounded-lg border border-rose-200">
+                {pinError}
+              </p>
+            )}
 
             <button
               type="submit"
-              className="w-full text-white font-extrabold text-sm py-3.5 rounded-2xl shadow-md transition-all active:scale-95 cursor-pointer"
-              style={{ background: "var(--blue-dark)" }}
+              className="w-full py-3.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold rounded-xl shadow-lg shadow-blue-500/25 transition-all transform active:scale-95 cursor-pointer"
             >
               Unlock Dashboard 🔓
             </button>
           </form>
 
-          <div className="text-center mt-6 text-[11px] text-slate-400">
-            Protected CMS • Official School Administration
-          </div>
+          <p className="text-[11px] text-slate-400 mt-6">
+            Default Security PIN: <code className="bg-slate-100 text-slate-600 px-2 py-0.5 rounded font-mono font-bold">sinaps2026</code>
+          </p>
         </div>
       </div>
     );
   }
 
+  // ==========================================
+  // 2. LOADING STATE
+  // ==========================================
   if (isLoading || !content) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ background: "var(--bg-cream)" }}>
-        <div className="text-center space-y-3">
-          <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto"></div>
-          <p className="font-bold text-slate-700">Loading SINAPS Content Engine...</p>
-        </div>
+      <div className="min-h-screen bg-slate-900 flex flex-col items-center justify-center text-white">
+        <div className="w-12 h-12 border-4 border-amber-400 border-t-transparent rounded-full animate-spin mb-4"></div>
+        <p className="font-bold text-slate-300">Loading SINAPS Website Data...</p>
       </div>
     );
   }
 
+  // ==========================================
+  // 3. MASTER DUAL-PANE CMS DASHBOARD
+  // ==========================================
   return (
-    <div className="min-h-screen flex flex-col" style={{ background: "var(--bg-cream)", color: "var(--text-dark)" }}>
+    <div className="min-h-screen bg-slate-900 text-slate-800 flex flex-col h-screen overflow-hidden">
+      
+      {/* Toast Notification */}
       {toastMessage && (
-        <div className="fixed top-5 right-5 z-50 bg-slate-900 text-white px-5 py-3 rounded-2xl shadow-2xl border border-slate-700 flex items-center gap-3 text-xs font-bold">
-          <span>{toastMessage}</span>
+        <div className="fixed top-4 right-4 z-50 bg-slate-900 text-white px-5 py-3 rounded-2xl shadow-2xl border border-slate-700 flex items-center gap-3 animate-bounce">
+          <span className="text-sm font-semibold">{toastMessage}</span>
         </div>
       )}
 
-      <header className="px-6 py-3.5 border-b border-slate-200 flex flex-wrap items-center justify-between gap-4 sticky top-0 z-40" style={{ background: "#ffffff" }}>
+      {/* TOP HEADER BAR */}
+      <header className="bg-slate-950 px-4 py-2.5 flex items-center justify-between border-b border-slate-800 flex-shrink-0 text-white">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center overflow-hidden shadow-sm">
-            <Image src="/logo.png" alt="SINAPS" width={38} height={38} className="rounded-full object-cover" />
+          <div className="w-9 h-9 rounded-xl bg-blue-600 flex items-center justify-center shadow-md overflow-hidden">
+            <Image src="/emblem.png" alt="Logo" width={28} height={28} className="object-contain" />
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <span style={{ fontFamily: "var(--font-heading)", color: "var(--blue-dark)", fontWeight: 900, fontSize: "17px" }}>
-                SINAPS VISUAL CMS
+              <span className="font-extrabold text-sm sm:text-base tracking-tight text-white">
+                SINAPS Visual CMS
               </span>
-              <span className="text-[10px] bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded-full">
-                ● Live Synced
+              <span className="text-[10px] bg-emerald-500/20 text-emerald-400 font-bold px-2 py-0.5 rounded-full border border-emerald-500/30 flex items-center gap-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping"></span> Live Synced
               </span>
             </div>
-            <p className="text-[11px] text-slate-500">St. Ignatius Nursery & Primary School • Budapadi, Erode</p>
+            <p className="text-[11px] text-slate-400 hidden sm:block">
+              St. Ignatius Nursery & Primary School • Budapadi, Erode
+            </p>
           </div>
         </div>
 
-        <div className="flex items-center bg-slate-100 p-1 rounded-2xl border border-slate-200 text-xs">
-          <button
-            onClick={() => setDeviceMode("desktop")}
-            className={`px-3 py-1.5 rounded-xl font-bold transition-all ${
-              deviceMode === "desktop" ? "bg-white text-blue-700 shadow-sm" : "text-slate-500 hover:text-slate-900"
-            }`}
-          >
-            🖥️ Desktop
-          </button>
-          <button
-            onClick={() => setDeviceMode("tablet")}
-            className={`px-3 py-1.5 rounded-xl font-bold transition-all ${
-              deviceMode === "tablet" ? "bg-white text-blue-700 shadow-sm" : "text-slate-500 hover:text-slate-900"
-            }`}
-          >
-            💻 Tablet
-          </button>
-          <button
-            onClick={() => setDeviceMode("mobile")}
-            className={`px-3 py-1.5 rounded-xl font-bold transition-all ${
-              deviceMode === "mobile" ? "bg-white text-blue-700 shadow-sm" : "text-slate-500 hover:text-slate-900"
-            }`}
-          >
-            📱 Mobile
-          </button>
-        </div>
+        {/* Central Controls: Preview Page Selector & Device Switcher */}
+        <div className="flex items-center gap-3">
+          {/* Website Page Switcher for Live Inspector */}
+          <div className="hidden lg:flex items-center bg-slate-900 p-1 rounded-xl border border-slate-800 text-xs">
+            <span className="text-[10px] text-slate-400 font-bold px-2 uppercase">Preview Page:</span>
+            <button
+              onClick={() => { setPreviewPage("home"); locateSection("live-hero", "home"); }}
+              className={`px-2.5 py-1 rounded-lg font-bold transition-all ${
+                previewPage === "home" ? "bg-blue-600 text-white shadow" : "text-slate-400 hover:text-white"
+              }`}
+            >
+              🏠 Home
+            </button>
+            <button
+              onClick={() => { setPreviewPage("fees"); locateSection("live-fees-cards", "fees"); }}
+              className={`px-2.5 py-1 rounded-lg font-bold transition-all ${
+                previewPage === "fees" ? "bg-amber-500 text-slate-950 shadow" : "text-slate-400 hover:text-white"
+              }`}
+            >
+              💰 Fees Overview
+            </button>
+            <button
+              onClick={() => { setPreviewPage("school-fees"); locateSection("live-school-table", "school-fees"); }}
+              className={`px-2.5 py-1 rounded-lg font-bold transition-all ${
+                previewPage === "school-fees" ? "bg-amber-400 text-slate-950 shadow" : "text-slate-400 hover:text-white"
+              }`}
+            >
+              📊 Class Tuition
+            </button>
+            <button
+              onClick={() => { setPreviewPage("teachers"); locateSection("live-teachers", "teachers"); }}
+              className={`px-2.5 py-1 rounded-lg font-bold transition-all ${
+                previewPage === "teachers" ? "bg-purple-600 text-white shadow" : "text-slate-400 hover:text-white"
+              }`}
+            >
+              👩‍🏫 Teachers
+            </button>
+            <button
+              onClick={() => { setPreviewPage("students"); locateSection("live-students", "students"); }}
+              className={`px-2.5 py-1 rounded-lg font-bold transition-all ${
+                previewPage === "students" ? "bg-emerald-600 text-white shadow" : "text-slate-400 hover:text-white"
+              }`}
+            >
+              🎓 Students
+            </button>
+          </div>
 
-        <div className="flex items-center gap-2.5">
-          <button
-            onClick={saveContent}
-            className="px-4 py-2 rounded-xl text-xs font-extrabold border-2 border-slate-200 hover:border-slate-300 bg-white text-slate-800 shadow-sm transition-all active:scale-95"
-          >
-            💾 Save Changes
-          </button>
+          {/* Device Mockup Toggle */}
+          <div className="flex bg-slate-900 p-0.5 rounded-lg border border-slate-800 text-xs">
+            <button
+              onClick={() => setDeviceMode("desktop")}
+              className={`px-2.5 py-1 rounded font-bold transition-all ${
+                deviceMode === "desktop" ? "bg-blue-600 text-white" : "text-slate-400 hover:text-white"
+              }`}
+              title="Desktop Screen"
+            >
+              💻 Desktop
+            </button>
+            <button
+              onClick={() => setDeviceMode("tablet")}
+              className={`px-2.5 py-1 rounded font-bold transition-all ${
+                deviceMode === "tablet" ? "bg-blue-600 text-white" : "text-slate-400 hover:text-white"
+              }`}
+              title="Tablet Screen"
+            >
+              📱 Tablet
+            </button>
+            <button
+              onClick={() => setDeviceMode("mobile")}
+              className={`px-2.5 py-1 rounded font-bold transition-all ${
+                deviceMode === "mobile" ? "bg-blue-600 text-white" : "text-slate-400 hover:text-white"
+              }`}
+              title="Mobile Screen"
+            >
+              📲 Mobile
+            </button>
+          </div>
 
-          <button
-            onClick={handlePublishLive}
-            disabled={isPublishing}
-            className="px-4 py-2 rounded-xl text-xs font-extrabold text-white shadow-md flex items-center gap-1.5 transition-all active:scale-95 cursor-pointer"
-            style={{ background: isPublishing ? "#64748B" : "var(--green)" }}
-          >
-            <i className="ti ti-rocket"></i>
-            <span>{isPublishing ? "Deploying..." : "🚀 Publish Live"}</span>
-          </button>
-
-          <button
-            onClick={handleLogout}
-            title="Log Out"
-            className="p-2 text-slate-400 hover:text-red-500 transition-colors"
-          >
-            <i className="ti ti-logout" style={{ fontSize: "1.2rem" }}></i>
-          </button>
+          {/* Action Buttons: Save & Publish */}
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleSaveDraft}
+              className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold rounded-lg border border-slate-700 flex items-center gap-1.5 transition-all cursor-pointer"
+            >
+              💾 Save Draft
+            </button>
+            <button
+              onClick={handlePublishLive}
+              disabled={isPublishing}
+              className="px-3.5 py-1.5 bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-600 hover:to-green-700 text-white text-xs font-extrabold rounded-lg shadow-md shadow-emerald-500/20 flex items-center gap-1.5 transition-all transform active:scale-95 cursor-pointer disabled:opacity-50"
+            >
+              {isPublishing ? "⏳ Publishing..." : "🚀 Publish Live"}
+            </button>
+            <button
+              onClick={handleLogout}
+              className="p-1.5 text-slate-400 hover:text-rose-400 rounded-lg hover:bg-slate-800 transition-all cursor-pointer"
+              title="Sign Out"
+            >
+              <i className="ti ti-logout text-base"></i>
+            </button>
+          </div>
         </div>
       </header>
 
-      <div className="flex-1 flex flex-col lg:flex-row overflow-hidden" style={{ minHeight: "calc(100vh - 65px)" }}>
+      {/* NAVIGATION TABS (Directly Mimicking Website Sections) */}
+      <div className="bg-slate-900 px-4 py-2 flex items-center gap-2 border-b border-slate-800 overflow-x-auto flex-shrink-0 text-xs">
+        <button
+          onClick={() => { setActiveTab("fees"); setPreviewPage("fees"); locateSection("live-fees-cards", "fees"); }}
+          className={`px-3 py-1.5 rounded-lg font-bold flex items-center gap-1.5 whitespace-nowrap transition-all ${
+            activeTab === "fees" ? "bg-amber-400 text-slate-950 shadow" : "bg-slate-800 text-slate-300 hover:bg-slate-700"
+          }`}
+        >
+          💰 Fees Structure (/fees & /fees/school)
+        </button>
+
+        <button
+          onClick={() => { setActiveTab("teachers"); setPreviewPage("teachers"); locateSection("live-teachers", "teachers"); }}
+          className={`px-3 py-1.5 rounded-lg font-bold flex items-center gap-1.5 whitespace-nowrap transition-all ${
+            activeTab === "teachers" ? "bg-purple-600 text-white shadow" : "bg-slate-800 text-slate-300 hover:bg-slate-700"
+          }`}
+        >
+          👩‍🏫 Staff & Teachers (/teachers)
+        </button>
+
+        <button
+          onClick={() => { setActiveTab("photos"); setPreviewPage("home"); locateSection("live-marquee", "home"); }}
+          className={`px-3 py-1.5 rounded-lg font-bold flex items-center gap-1.5 whitespace-nowrap transition-all ${
+            activeTab === "photos" ? "bg-blue-600 text-white shadow" : "bg-slate-800 text-slate-300 hover:bg-slate-700"
+          }`}
+        >
+          📸 Photos & Marquee
+        </button>
+
+        <button
+          onClick={() => { setActiveTab("home"); setPreviewPage("home"); locateSection("live-hero", "home"); }}
+          className={`px-3 py-1.5 rounded-lg font-bold flex items-center gap-1.5 whitespace-nowrap transition-all ${
+            activeTab === "home" ? "bg-blue-600 text-white shadow" : "bg-slate-800 text-slate-300 hover:bg-slate-700"
+          }`}
+        >
+          🏠 Home & Top Bar
+        </button>
+
+        <button
+          onClick={() => { setActiveTab("students"); setPreviewPage("students"); locateSection("live-students", "students"); }}
+          className={`px-3 py-1.5 rounded-lg font-bold flex items-center gap-1.5 whitespace-nowrap transition-all ${
+            activeTab === "students" ? "bg-emerald-600 text-white shadow" : "bg-slate-800 text-slate-300 hover:bg-slate-700"
+          }`}
+        >
+          🎓 Students & Stats (/students)
+        </button>
+
+        <button
+          onClick={() => { setActiveTab("popup"); setPreviewPage("home"); locateSection("live-popup", "home"); }}
+          className={`px-3 py-1.5 rounded-lg font-bold flex items-center gap-1.5 whitespace-nowrap transition-all ${
+            activeTab === "popup" ? "bg-rose-600 text-white shadow" : "bg-slate-800 text-slate-300 hover:bg-slate-700"
+          }`}
+        >
+          🚨 Urgent Pop-up Alert
+        </button>
+
+        <button
+          onClick={() => { setActiveTab("contact"); setPreviewPage("home"); locateSection("live-contact", "home"); }}
+          className={`px-3 py-1.5 rounded-lg font-bold flex items-center gap-1.5 whitespace-nowrap transition-all ${
+            activeTab === "contact" ? "bg-slate-700 text-white shadow" : "bg-slate-800 text-slate-300 hover:bg-slate-700"
+          }`}
+        >
+          📍 Campus Info & Contact
+        </button>
+      </div>
+
+      {/* DUAL PANE WORKSPACE: LEFT = EDITOR CONTROLS, RIGHT = LIVE WEBSITE MIMIC INSPECTOR */}
+      <div className="flex-1 flex overflow-hidden">
         
-        {/* LEFT PANE */}
-        <div className="w-full lg:w-[45%] xl:w-[40%] border-r border-slate-200 flex flex-col bg-white overflow-hidden shadow-sm">
+        {/* LEFT COLUMN: EDITING FORM (45% Width) */}
+        <div className="w-full lg:w-[48%] xl:w-[45%] bg-slate-900 border-r border-slate-800 overflow-y-auto custom-scrollbar p-4 lg:p-6 text-slate-100">
           
-          <div className="bg-slate-50 px-4 py-2 border-b border-slate-200 flex items-center gap-1.5 overflow-x-auto custom-scrollbar flex-shrink-0 text-xs">
-            <button
-              onClick={() => handleTabChange("photos")}
-              className={`px-3 py-2 rounded-xl whitespace-nowrap font-bold transition-all ${
-                activeTab === "photos" ? "bg-blue-600 text-white shadow-sm" : "text-slate-600 hover:bg-slate-200"
-              }`}
-            >
-              📸 Photos & Marquee
-            </button>
-            <button
-              onClick={() => handleTabChange("announcements")}
-              className={`px-3 py-2 rounded-xl whitespace-nowrap font-bold transition-all ${
-                activeTab === "announcements" ? "bg-blue-600 text-white shadow-sm" : "text-slate-600 hover:bg-slate-200"
-              }`}
-            >
-              📢 Top Bar & Hero
-            </button>
-            <button
-              onClick={() => handleTabChange("popup")}
-              className={`px-3 py-2 rounded-xl whitespace-nowrap font-bold transition-all ${
-                activeTab === "popup" ? "bg-blue-600 text-white shadow-sm" : "text-slate-600 hover:bg-slate-200"
-              }`}
-            >
-              🚨 Urgent Pop-up
-            </button>
-            <button
-              onClick={() => handleTabChange("stats")}
-              className={`px-3 py-2 rounded-xl whitespace-nowrap font-bold transition-all ${
-                activeTab === "stats" ? "bg-blue-600 text-white shadow-sm" : "text-slate-600 hover:bg-slate-200"
-              }`}
-            >
-              🎓 Stats & Team
-            </button>
-            <button
-              onClick={() => handleTabChange("fees")}
-              className={`px-3 py-2 rounded-xl whitespace-nowrap font-bold transition-all ${
-                activeTab === "fees" ? "bg-blue-600 text-white shadow-sm" : "text-slate-600 hover:bg-slate-200"
-              }`}
-            >
-              💰 Fees & Bus
-            </button>
-            <button
-              onClick={() => handleTabChange("contact")}
-              className={`px-3 py-2 rounded-xl whitespace-nowrap font-bold transition-all ${
-                activeTab === "contact" ? "bg-blue-600 text-white shadow-sm" : "text-slate-600 hover:bg-slate-200"
-              }`}
-            >
-              📍 Campus Info
-            </button>
-          </div>
+          {/* ==================================================== */}
+          {/* TAB 1: FEES & BUS STRUCTURE (ACCURATE & FULLY EDITABLE) */}
+          {/* ==================================================== */}
+          {activeTab === "fees" && (
+            <div className="space-y-6">
+              <div>
+                <div className="flex items-center justify-between">
+                  <h3 className="text-lg font-extrabold text-white flex items-center gap-2">
+                    <span>💰</span> School Fees & Slabs Manager
+                  </h3>
+                  <button
+                    onClick={() => locateSection("live-fees-cards", "fees")}
+                    className="text-xs bg-amber-400 hover:bg-amber-500 text-slate-950 font-bold px-2.5 py-1 rounded-md flex items-center gap-1"
+                  >
+                    📍 Locate on Site
+                  </button>
+                </div>
+                <p className="text-xs text-slate-400 mt-1">
+                  Changes made here instantly update both the <strong>/fees</strong> overview cards and the detailed <strong>/fees/school</strong> class-wise tuition table!
+                </p>
+              </div>
 
-          <div className="flex-1 overflow-y-auto p-5 space-y-6 custom-scrollbar text-xs">
-
-            {/* TAB: PHOTOS */}
-            {activeTab === "photos" && (
-              <div className="space-y-5">
-                <div className="p-4 rounded-2xl border border-blue-200 flex items-center justify-between" style={{ background: "var(--bg-sky)" }}>
+              {/* PART A: DETAILED CLASS-BY-CLASS TUITION (Matches /fees/school) */}
+              <div className="bg-slate-800/80 rounded-2xl p-4 border border-slate-700 space-y-4">
+                <div className="flex items-center justify-between border-b border-slate-700 pb-2">
                   <div>
-                    <h3 className="font-extrabold text-sm" style={{ color: "var(--blue-dark)" }}>School Photo Manager</h3>
-                    <p className="text-slate-500 text-[11px] mt-0.5">Upload, reorder, or pick photos for Hero Card & Marquee Strip.</p>
+                    <h4 className="font-extrabold text-sm text-amber-300 flex items-center gap-1.5">
+                      📊 Class-wise Tuition Fees Table
+                    </h4>
+                    <p className="text-[11px] text-slate-400">
+                      As seen on: <code className="text-amber-400">sinaps.in/fees/school</code>
+                    </p>
                   </div>
                   <button
-                    onClick={() => locateSection("live-marquee")}
-                    className="text-xs font-bold px-3 py-1.5 rounded-xl text-white shadow-sm"
-                    style={{ background: "var(--orange)" }}
+                    onClick={handleAddClassFee}
+                    className="text-xs bg-blue-600 hover:bg-blue-500 text-white font-bold px-2.5 py-1 rounded-md flex items-center gap-1"
                   >
-                    🎯 Locate on Site
+                    ➕ Add Class
                   </button>
                 </div>
 
-                <div className="p-4 rounded-2xl border border-slate-200 space-y-3" style={{ background: "#ffffff" }}>
-                  <div className="flex items-center justify-between">
-                    <span className="font-extrabold uppercase text-[11px] text-blue-900">🌟 Active Hero Image</span>
-                    <button onClick={() => locateSection("live-hero-card")} className="text-blue-600 font-bold hover:underline">
-                      🎯 View in Hero
-                    </button>
-                  </div>
-                  <div className="flex items-center gap-4">
-                    <div className="w-28 h-20 rounded-xl overflow-hidden bg-slate-100 border border-slate-200 flex-shrink-0 relative">
-                      <Image src={content.hero.heroImage} alt="Hero" width={112} height={80} className="w-full h-full object-cover" />
-                    </div>
-                    <div className="space-y-1 text-slate-600">
-                      <p className="font-bold text-slate-800">Current: <code>{content.hero.heroImage}</code></p>
-                      <p className="text-[11px] text-slate-400">Click &quot;Make Hero&quot; on any photo below to replace this image.</p>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="p-4 rounded-2xl border-2 border-dashed border-blue-300 hover:border-blue-500 text-center space-y-2 bg-blue-50/50">
-                  <i className="ti ti-cloud-upload text-blue-600" style={{ fontSize: "2rem" }}></i>
-                  <p className="font-extrabold text-slate-800">Upload New Photo (Auto-Resized)</p>
-                  <p className="text-[11px] text-slate-500">Camera 20MB photos are auto-compressed with Sharp to &lt;150KB for fast 4G loading.</p>
-                  <label className="inline-block mt-2 px-4 py-2 rounded-xl text-white font-extrabold cursor-pointer transition-all active:scale-95" style={{ background: "var(--blue)" }}>
-                    Browse Image File
-                    <input type="file" accept="image/*" className="hidden" onChange={handlePhotoUpload} disabled={isUploading} />
-                  </label>
-                </div>
-
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <h4 className="font-extrabold text-slate-800">Current Marquee Photos ({content.marquee.length})</h4>
-                    <span className="text-[11px] text-slate-400">Appears in scrolling strip</span>
+                <div className="space-y-2">
+                  <div className="grid grid-cols-12 gap-2 text-[11px] font-bold text-slate-400 uppercase tracking-wider px-2">
+                    <span className="col-span-5">Class / Standard</span>
+                    <span className="col-span-5">Fees (Rs.)</span>
+                    <span className="col-span-2 text-right">Action</span>
                   </div>
 
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                    {content.marquee.map((src: string, idx: number) => (
-                      <div key={idx} className="border border-slate-200 rounded-xl p-2 bg-slate-50 space-y-2 group shadow-sm">
-                        <div className="h-24 rounded-lg overflow-hidden bg-slate-200 relative">
-                          <Image src={src} alt={`Photo ${idx}`} width={120} height={96} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
-                          <span className="absolute top-1 left-1 bg-blue-600 text-white text-[9px] font-bold px-1.5 rounded">
-                            #{idx + 1}
-                          </span>
-                        </div>
-                        <div className="flex items-center justify-between text-[10px] pt-1">
-                          <button
-                            onClick={() => {
-                              setContent({ ...content, hero: { ...content.hero, heroImage: src } });
-                              locateSection("live-hero-card");
-                              showToast("Updated Hero photo!");
-                            }}
-                            className="font-bold text-blue-600 hover:underline"
-                          >
-                            Set Hero
-                          </button>
-                          <button
-                            onClick={() => locateSection("live-marquee")}
-                            className="text-amber-600 font-bold hover:underline"
-                          >
-                            🎯 Locate
-                          </button>
-                          <button
-                            onClick={() => {
-                              const updated = content.marquee.filter((_: string, i: number) => i !== idx);
-                              setContent({ ...content, marquee: updated });
-                              showToast("Removed from marquee");
-                            }}
-                            className="text-red-500 font-bold hover:underline"
-                          >
-                            Delete
-                          </button>
-                        </div>
+                  {content.fees?.classList?.map((item, idx) => (
+                    <div
+                      key={idx}
+                      className="grid grid-cols-12 gap-2 items-center bg-slate-900/60 p-2 rounded-xl border border-slate-700 hover:border-slate-600 transition-all"
+                    >
+                      <input
+                        type="text"
+                        value={item.standard}
+                        onChange={(e) => handleClassFeeChange(idx, "standard", e.target.value)}
+                        placeholder="e.g. LKG"
+                        className="col-span-5 bg-slate-800 text-white px-2.5 py-1.5 rounded-lg border border-slate-600 text-xs font-semibold focus:outline-none focus:border-amber-400"
+                      />
+                      <input
+                        type="text"
+                        value={item.amount}
+                        onChange={(e) => handleClassFeeChange(idx, "amount", e.target.value)}
+                        placeholder="e.g. 19,800"
+                        className="col-span-5 bg-slate-800 text-amber-300 font-bold px-2.5 py-1.5 rounded-lg border border-slate-600 text-xs focus:outline-none focus:border-amber-400 text-right"
+                      />
+                      <div className="col-span-2 text-right">
+                        <button
+                          onClick={() => handleDeleteClassFee(idx)}
+                          className="text-slate-400 hover:text-rose-400 p-1.5 rounded-md hover:bg-slate-800 transition-all"
+                          title="Remove Class"
+                        >
+                          <i className="ti ti-trash text-sm"></i>
+                        </button>
                       </div>
-                    ))}
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* PART B: 4 OVERVIEW FEE CARDS (Matches /fees) */}
+              <div className="bg-slate-800/80 rounded-2xl p-4 border border-slate-700 space-y-4">
+                <h4 className="font-extrabold text-sm text-blue-300 flex items-center gap-1.5 border-b border-slate-700 pb-2">
+                  🎓 4 Overview Fee Cards (As seen on /fees)
+                </h4>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {/* Card 1: School Tuition */}
+                  <div className="bg-slate-900/70 p-3 rounded-xl border border-blue-900/50 space-y-2">
+                    <span className="text-xs font-bold text-blue-400">1. School Tuition Fees</span>
+                    <div>
+                      <label className="text-[10px] text-slate-400 block font-semibold">Amount</label>
+                      <input
+                        type="text"
+                        value={content.fees?.overview?.tuition?.amount || ""}
+                        onChange={(e) => handleOverviewFeeChange("tuition", "amount", e.target.value)}
+                        className="w-full bg-slate-800 text-white text-xs px-2 py-1 rounded border border-slate-700"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[10px] text-slate-400 block font-semibold">Period</label>
+                      <input
+                        type="text"
+                        value={content.fees?.overview?.tuition?.period || ""}
+                        onChange={(e) => handleOverviewFeeChange("tuition", "period", e.target.value)}
+                        className="w-full bg-slate-800 text-white text-xs px-2 py-1 rounded border border-slate-700"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Card 2: Book Fees */}
+                  <div className="bg-slate-900/70 p-3 rounded-xl border border-amber-900/50 space-y-2">
+                    <span className="text-xs font-bold text-amber-400">2. Book & Stationery</span>
+                    <div>
+                      <label className="text-[10px] text-slate-400 block font-semibold">Amount</label>
+                      <input
+                        type="text"
+                        value={content.fees?.overview?.book?.amount || ""}
+                        onChange={(e) => handleOverviewFeeChange("book", "amount", e.target.value)}
+                        className="w-full bg-slate-800 text-white text-xs px-2 py-1 rounded border border-slate-700"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[10px] text-slate-400 block font-semibold">Period</label>
+                      <input
+                        type="text"
+                        value={content.fees?.overview?.book?.period || ""}
+                        onChange={(e) => handleOverviewFeeChange("book", "period", e.target.value)}
+                        className="w-full bg-slate-800 text-white text-xs px-2 py-1 rounded border border-slate-700"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Card 3: Bus Transport */}
+                  <div className="bg-slate-900/70 p-3 rounded-xl border border-emerald-900/50 space-y-2">
+                    <span className="text-xs font-bold text-emerald-400">3. Bus Transport</span>
+                    <div>
+                      <label className="text-[10px] text-slate-400 block font-semibold">Amount</label>
+                      <input
+                        type="text"
+                        value={content.fees?.overview?.bus?.amount || ""}
+                        onChange={(e) => handleOverviewFeeChange("bus", "amount", e.target.value)}
+                        className="w-full bg-slate-800 text-white text-xs px-2 py-1 rounded border border-slate-700"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[10px] text-slate-400 block font-semibold">Period</label>
+                      <input
+                        type="text"
+                        value={content.fees?.overview?.bus?.period || ""}
+                        onChange={(e) => handleOverviewFeeChange("bus", "period", e.target.value)}
+                        className="w-full bg-slate-800 text-white text-xs px-2 py-1 rounded border border-slate-700"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Card 4: Extracurricular Activities */}
+                  <div className="bg-slate-900/70 p-3 rounded-xl border border-pink-900/50 space-y-2">
+                    <span className="text-xs font-bold text-pink-400">4. Activities Fees</span>
+                    <div>
+                      <label className="text-[10px] text-slate-400 block font-semibold">Amount</label>
+                      <input
+                        type="text"
+                        value={content.fees?.overview?.activity?.amount || ""}
+                        onChange={(e) => handleOverviewFeeChange("activity", "amount", e.target.value)}
+                        className="w-full bg-slate-800 text-white text-xs px-2 py-1 rounded border border-slate-700"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[10px] text-slate-400 block font-semibold">Period</label>
+                      <input
+                        type="text"
+                        value={content.fees?.overview?.activity?.period || ""}
+                        onChange={(e) => handleOverviewFeeChange("activity", "period", e.target.value)}
+                        className="w-full bg-slate-800 text-white text-xs px-2 py-1 rounded border border-slate-700"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Footer Note */}
+                <div className="pt-2">
+                  <label className="text-xs font-bold text-slate-300 block mb-1">
+                    Disclaimer Note on Fees Page:
+                  </label>
+                  <textarea
+                    rows={2}
+                    value={content.fees?.overview?.note || ""}
+                    onChange={(e) => {
+                      const updatedOverview = { ...content.fees.overview, note: e.target.value };
+                      setContent({ ...content, fees: { ...content.fees, overview: updatedOverview } });
+                    }}
+                    className="w-full bg-slate-900 text-slate-200 text-xs p-2 rounded-xl border border-slate-700 focus:outline-none focus:border-amber-400"
+                  />
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ==================================================== */}
+          {/* TAB 2: TEACHERS & STAFF DIRECTORY (FULL INLINE EDITING) */}
+          {/* ==================================================== */}
+          {activeTab === "teachers" && (
+            <div className="space-y-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-lg font-extrabold text-white flex items-center gap-2">
+                    <span>👩‍🏫</span> Staff & Teachers Directory
+                  </h3>
+                  <p className="text-xs text-slate-400 mt-0.5">
+                    Click any field to edit name, qualification, or role directly. Reorder with ↑ / ↓ buttons!
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={handleAddTeacher}
+                    className="text-xs bg-purple-600 hover:bg-purple-500 text-white font-bold px-3 py-1.5 rounded-lg flex items-center gap-1 shadow cursor-pointer"
+                  >
+                    ➕ Add Teacher
+                  </button>
+                  <button
+                    onClick={() => locateSection("live-teachers", "teachers")}
+                    className="text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold px-2.5 py-1.5 rounded-lg"
+                  >
+                    📍 Locate
+                  </button>
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                {content.teachers?.map((t: TeacherItem, idx: number) => (
+                  <div
+                    key={idx}
+                    className="bg-slate-800/80 p-3.5 rounded-2xl border border-slate-700 hover:border-purple-500/50 transition-all space-y-2.5"
+                  >
+                    <div className="flex items-center justify-between text-xs border-b border-slate-700/60 pb-2">
+                      <span className="font-extrabold text-purple-400 flex items-center gap-1.5">
+                        <span className="w-5 h-5 rounded-full bg-purple-500/20 flex items-center justify-center text-[10px]">
+                          {idx + 1}
+                        </span>
+                        Teacher #{idx + 1}
+                      </span>
+                      <div className="flex items-center gap-1">
+                        <button
+                          onClick={() => handleMoveTeacher(idx, "up")}
+                          disabled={idx === 0}
+                          className="p-1 rounded bg-slate-700 hover:bg-slate-600 text-slate-300 disabled:opacity-30"
+                          title="Move Up"
+                        >
+                          ↑
+                        </button>
+                        <button
+                          onClick={() => handleMoveTeacher(idx, "down")}
+                          disabled={idx === content.teachers.length - 1}
+                          className="p-1 rounded bg-slate-700 hover:bg-slate-600 text-slate-300 disabled:opacity-30"
+                          title="Move Down"
+                        >
+                          ↓
+                        </button>
+                        <button
+                          onClick={() => handleDeleteTeacher(idx)}
+                          className="p-1 text-slate-400 hover:text-rose-400 hover:bg-slate-700 rounded ml-1"
+                          title="Delete Teacher"
+                        >
+                          <i className="ti ti-trash"></i>
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                      <div>
+                        <label className="text-[10px] text-slate-400 block font-semibold mb-0.5">Teacher Name</label>
+                        <input
+                          type="text"
+                          value={t.name}
+                          onChange={(e) => handleTeacherChange(idx, "name", e.target.value)}
+                          placeholder="e.g. Mrs. Anitha R."
+                          className="w-full bg-slate-900 text-white font-bold text-xs px-2.5 py-1.5 rounded-lg border border-slate-600 focus:outline-none focus:border-purple-400"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="text-[10px] text-slate-400 block font-semibold mb-0.5">Qualification</label>
+                        <input
+                          type="text"
+                          value={t.qualification}
+                          onChange={(e) => handleTeacherChange(idx, "qualification", e.target.value)}
+                          placeholder="e.g. M.A., B.Ed."
+                          className="w-full bg-slate-900 text-blue-300 font-semibold text-xs px-2.5 py-1.5 rounded-lg border border-slate-600 focus:outline-none focus:border-purple-400"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="text-[10px] text-slate-400 block font-semibold mb-0.5">Role / Subject</label>
+                        <input
+                          type="text"
+                          value={t.role || ""}
+                          onChange={(e) => handleTeacherChange(idx, "role", e.target.value)}
+                          placeholder="e.g. Primary Head"
+                          className="w-full bg-slate-900 text-amber-300 font-semibold text-xs px-2.5 py-1.5 rounded-lg border border-slate-600 focus:outline-none focus:border-purple-400"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* ==================================================== */}
+          {/* TAB 3: PHOTOS & MARQUEE MANAGER */}
+          {/* ==================================================== */}
+          {activeTab === "photos" && (
+            <div className="space-y-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-lg font-extrabold text-white flex items-center gap-2">
+                    <span>📸</span> School Photo & Marquee Manager
+                  </h3>
+                  <p className="text-xs text-slate-400 mt-0.5">
+                    Pick Hero Card photo or upload / reorder photos for the scrolling strip.
+                  </p>
+                </div>
+                <button
+                  onClick={() => locateSection("live-marquee", "home")}
+                  className="text-xs bg-blue-600 hover:bg-blue-500 text-white font-bold px-2.5 py-1 rounded-md"
+                >
+                  📍 Locate on Site
+                </button>
+              </div>
+
+              {/* Upload Box */}
+              <div className="bg-slate-800/80 p-4 rounded-2xl border border-dashed border-slate-700 text-center space-y-3">
+                <div className="w-10 h-10 rounded-full bg-blue-500/20 text-blue-400 mx-auto flex items-center justify-center text-xl">
+                  📁
+                </div>
+                <div>
+                  <h4 className="font-bold text-sm text-white">Upload New Campus / Activity Photo</h4>
+                  <p className="text-[11px] text-slate-400">Large raw camera photos are automatically optimized.</p>
+                </div>
+                <label className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white font-bold px-4 py-2 rounded-xl text-xs cursor-pointer shadow">
+                  <span>{isUploading ? "Uploading..." : "Browse Photo File"}</span>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleUploadPhoto}
+                    disabled={isUploading}
+                    className="hidden"
+                  />
+                </label>
+              </div>
+
+              {/* Current Photos Grid */}
+              <div className="space-y-2">
+                <h4 className="font-extrabold text-xs uppercase tracking-wider text-slate-400">
+                  Marquee Photos ({content.marquee.length})
+                </h4>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                  {content.marquee.map((src, idx) => (
+                    <div
+                      key={idx}
+                      className="bg-slate-800 rounded-xl overflow-hidden border border-slate-700 relative group"
+                    >
+                      <div className="h-28 bg-slate-950 relative">
+                        <img
+                          src={src}
+                          alt={`Marquee ${idx}`}
+                          className="w-full h-full object-cover"
+                        />
+                        {content.hero.heroImage === src && (
+                          <span className="absolute top-1 left-1 bg-amber-500 text-slate-950 font-black text-[9px] px-1.5 py-0.5 rounded">
+                            ⭐ HERO
+                          </span>
+                        )}
+                      </div>
+                      <div className="p-2 flex items-center justify-between text-[11px] bg-slate-850">
+                        <button
+                          onClick={() => {
+                            setContent({ ...content, hero: { ...content.hero, heroImage: src } });
+                            showToast("Set as Hero Card Photo!");
+                            locateSection("live-hero", "home");
+                          }}
+                          className="text-blue-400 hover:text-blue-300 font-bold"
+                        >
+                          Make Hero
+                        </button>
+                        <button
+                          onClick={() => {
+                            const updated = content.marquee.filter((_, i) => i !== idx);
+                            setContent({ ...content, marquee: updated });
+                            showToast("Photo removed from strip");
+                          }}
+                          className="text-slate-400 hover:text-rose-400"
+                        >
+                          <i className="ti ti-trash"></i>
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ==================================================== */}
+          {/* TAB 4: HOME & TOP BAR */}
+          {/* ==================================================== */}
+          {activeTab === "home" && (
+            <div className="space-y-6">
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-extrabold text-white flex items-center gap-2">
+                  <span>🏠</span> Home & Top Announcement Bar
+                </h3>
+                <button
+                  onClick={() => locateSection("live-topbar", "home")}
+                  className="text-xs bg-blue-600 hover:bg-blue-500 text-white font-bold px-2.5 py-1 rounded-md"
+                >
+                  📍 Locate on Site
+                </button>
+              </div>
+
+              {/* Announcement Bar */}
+              <div className="bg-slate-800/80 p-4 rounded-2xl border border-slate-700 space-y-3">
+                <h4 className="font-extrabold text-xs uppercase tracking-wider text-blue-400">
+                  Top Sticky Banner
+                </h4>
+                <div>
+                  <label className="text-[11px] text-slate-400 block font-semibold mb-1">Banner Announcement Text</label>
+                  <input
+                    type="text"
+                    value={content.announcement.text}
+                    onChange={(e) =>
+                      setContent({
+                        ...content,
+                        announcement: { ...content.announcement, text: e.target.value },
+                      })
+                    }
+                    className="w-full bg-slate-900 text-white text-xs px-3 py-2 rounded-xl border border-slate-700"
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <label className="text-[11px] text-slate-400 block font-semibold mb-1">Grade Pill</label>
+                    <input
+                      type="text"
+                      value={content.announcement.gradePill}
+                      onChange={(e) =>
+                        setContent({
+                          ...content,
+                          announcement: { ...content.announcement, gradePill: e.target.value },
+                        })
+                      }
+                      className="w-full bg-slate-900 text-white text-xs px-3 py-2 rounded-xl border border-slate-700"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[11px] text-slate-400 block font-semibold mb-1">CBSE Pill</label>
+                    <input
+                      type="text"
+                      value={content.announcement.cbsePill}
+                      onChange={(e) =>
+                        setContent({
+                          ...content,
+                          announcement: { ...content.announcement, cbsePill: e.target.value },
+                        })
+                      }
+                      className="w-full bg-slate-900 text-white text-xs px-3 py-2 rounded-xl border border-slate-700"
+                    />
                   </div>
                 </div>
               </div>
-            )}
 
-            {/* TAB: ANNOUNCEMENTS */}
-            {activeTab === "announcements" && (
-              <div className="space-y-4">
-                <div className="p-4 rounded-2xl border border-slate-200 space-y-3 bg-white shadow-sm">
-                  <div className="flex items-center justify-between">
-                    <span className="font-extrabold uppercase text-[11px] text-blue-900">1. Top Announcement Bar</span>
-                    <button onClick={() => locateSection("live-topbar")} className="text-amber-600 font-bold hover:underline">
-                      🎯 Locate on Site
-                    </button>
-                  </div>
-
-                  <div>
-                    <label className="block text-slate-600 font-bold mb-1">Banner Announcement Text</label>
-                    <input
-                      type="text"
-                      value={content.announcement.text}
-                      onChange={(e) => setContent({ ...content, announcement: { ...content.announcement, text: e.target.value } })}
-                      onFocus={() => locateSection("live-topbar")}
-                      className="w-full border-2 border-slate-200 rounded-xl p-2.5 font-semibold focus:border-blue-500 outline-none"
-                    />
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <label className="block text-slate-600 font-bold mb-1">Phone Number</label>
-                      <input
-                        type="text"
-                        value={content.announcement.phone}
-                        onChange={(e) => setContent({ ...content, announcement: { ...content.announcement, phone: e.target.value } })}
-                        onFocus={() => locateSection("live-topbar")}
-                        className="w-full border border-slate-200 rounded-xl p-2 font-semibold"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-slate-600 font-bold mb-1">WhatsApp Target Phone</label>
-                      <input
-                        type="text"
-                        value={content.announcement.whatsappNumber}
-                        onChange={(e) => setContent({ ...content, announcement: { ...content.announcement, whatsappNumber: e.target.value } })}
-                        className="w-full border border-slate-200 rounded-xl p-2 font-semibold"
-                      />
-                    </div>
-                  </div>
+              {/* Hero Section */}
+              <div className="bg-slate-800/80 p-4 rounded-2xl border border-slate-700 space-y-3">
+                <h4 className="font-extrabold text-xs uppercase tracking-wider text-amber-400">
+                  Hero Section
+                </h4>
+                <div>
+                  <label className="text-[11px] text-slate-400 block font-semibold mb-1">Badge</label>
+                  <input
+                    type="text"
+                    value={content.hero.badge}
+                    onChange={(e) =>
+                      setContent({ ...content, hero: { ...content.hero, badge: e.target.value } })
+                    }
+                    className="w-full bg-slate-900 text-white text-xs px-3 py-2 rounded-xl border border-slate-700"
+                  />
                 </div>
-
-                <div className="p-4 rounded-2xl border border-slate-200 space-y-3 bg-white shadow-sm">
-                  <div className="flex items-center justify-between">
-                    <span className="font-extrabold uppercase text-[11px] text-blue-900">2. Hero Heading & Subtitle</span>
-                    <button onClick={() => locateSection("live-hero")} className="text-amber-600 font-bold hover:underline">
-                      🎯 Locate Hero
-                    </button>
-                  </div>
-
+                <div className="grid grid-cols-3 gap-2">
                   <div>
-                    <label className="block text-slate-600 font-bold mb-1">Hero Badge Text</label>
-                    <input
-                      type="text"
-                      value={content.hero.badge}
-                      onChange={(e) => setContent({ ...content, hero: { ...content.hero, badge: e.target.value } })}
-                      onFocus={() => locateSection("live-hero")}
-                      className="w-full border border-slate-200 rounded-xl p-2 font-semibold"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-slate-600 font-bold mb-1">Main Heading (Line 1)</label>
+                    <label className="text-[10px] text-slate-400 block font-semibold mb-1">Line 1</label>
                     <input
                       type="text"
                       value={content.hero.titleLine1}
-                      onChange={(e) => setContent({ ...content, hero: { ...content.hero, titleLine1: e.target.value } })}
-                      onFocus={() => locateSection("live-hero")}
-                      className="w-full border border-slate-200 rounded-xl p-2 font-semibold"
+                      onChange={(e) =>
+                        setContent({ ...content, hero: { ...content.hero, titleLine1: e.target.value } })
+                      }
+                      className="w-full bg-slate-900 text-white text-xs px-2 py-1.5 rounded-lg border border-slate-700"
                     />
                   </div>
-
                   <div>
-                    <label className="block text-slate-600 font-bold mb-1">Highlighted Words</label>
+                    <label className="text-[10px] text-slate-400 block font-semibold mb-1">Line 2</label>
+                    <input
+                      type="text"
+                      value={content.hero.titleLine2}
+                      onChange={(e) =>
+                        setContent({ ...content, hero: { ...content.hero, titleLine2: e.target.value } })
+                      }
+                      className="w-full bg-slate-900 text-white text-xs px-2 py-1.5 rounded-lg border border-slate-700"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[10px] text-slate-400 block font-semibold mb-1">Highlight</label>
                     <input
                       type="text"
                       value={content.hero.titleHighlight}
-                      onChange={(e) => setContent({ ...content, hero: { ...content.hero, titleHighlight: e.target.value } })}
-                      onFocus={() => locateSection("live-hero")}
-                      className="w-full border border-slate-200 rounded-xl p-2 font-bold text-blue-600"
+                      onChange={(e) =>
+                        setContent({ ...content, hero: { ...content.hero, titleHighlight: e.target.value } })
+                      }
+                      className="w-full bg-slate-900 text-amber-400 font-bold text-xs px-2 py-1.5 rounded-lg border border-slate-700"
                     />
                   </div>
+                </div>
+                <div>
+                  <label className="text-[11px] text-slate-400 block font-semibold mb-1">Hero Description</label>
+                  <textarea
+                    rows={2}
+                    value={content.hero.desc}
+                    onChange={(e) =>
+                      setContent({ ...content, hero: { ...content.hero, desc: e.target.value } })
+                    }
+                    className="w-full bg-slate-900 text-white text-xs p-2 rounded-xl border border-slate-700"
+                  />
+                </div>
+                <div>
+                  <label className="text-[11px] text-slate-400 block font-semibold mb-1">YouTube Tour Video Link</label>
+                  <input
+                    type="text"
+                    value={content.hero.tourVideoUrl}
+                    onChange={(e) =>
+                      setContent({ ...content, hero: { ...content.hero, tourVideoUrl: e.target.value } })
+                    }
+                    className="w-full bg-slate-900 text-white text-xs px-3 py-2 rounded-xl border border-slate-700"
+                  />
+                </div>
+              </div>
+            </div>
+          )}
 
-                  <div>
-                    <label className="block text-slate-600 font-bold mb-1">Hero Subtitle</label>
-                    <textarea
-                      rows={3}
-                      value={content.hero.desc}
-                      onChange={(e) => setContent({ ...content, hero: { ...content.hero, desc: e.target.value } })}
-                      onFocus={() => locateSection("live-hero")}
-                      className="w-full border border-slate-200 rounded-xl p-2 font-medium"
-                    />
-                  </div>
+          {/* ==================================================== */}
+          {/* TAB 5: STUDENTS & STATS */}
+          {/* ==================================================== */}
+          {activeTab === "students" && (
+            <div className="space-y-6">
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-extrabold text-white flex items-center gap-2">
+                  <span>🎓</span> Students & School Statistics
+                </h3>
+                <button
+                  onClick={() => locateSection("live-students", "students")}
+                  className="text-xs bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-2.5 py-1 rounded-md"
+                >
+                  📍 Locate on Site
+                </button>
+              </div>
 
+              {/* Students Page Content */}
+              <div className="bg-slate-800/80 p-4 rounded-2xl border border-slate-700 space-y-3">
+                <h4 className="font-extrabold text-xs uppercase tracking-wider text-emerald-400">
+                  /students Page Content
+                </h4>
+                <div>
+                  <label className="text-[11px] text-slate-400 block font-semibold mb-1">Headline</label>
+                  <input
+                    type="text"
+                    value={content.students?.totalCount || ""}
+                    onChange={(e) =>
+                      setContent({
+                        ...content,
+                        students: { ...content.students, totalCount: e.target.value },
+                      })
+                    }
+                    className="w-full bg-slate-900 text-white font-bold text-xs px-3 py-2 rounded-xl border border-slate-700"
+                  />
+                </div>
+                <div>
+                  <label className="text-[11px] text-slate-400 block font-semibold mb-1">Description</label>
+                  <textarea
+                    rows={2}
+                    value={content.students?.desc || ""}
+                    onChange={(e) =>
+                      setContent({
+                        ...content,
+                        students: { ...content.students, desc: e.target.value },
+                      })
+                    }
+                    className="w-full bg-slate-900 text-white text-xs p-2 rounded-xl border border-slate-700"
+                  />
+                </div>
+              </div>
+
+              {/* Key Numerical Stats on Homepage */}
+              <div className="bg-slate-800/80 p-4 rounded-2xl border border-slate-700 space-y-3">
+                <h4 className="font-extrabold text-xs uppercase tracking-wider text-blue-400">
+                  Homepage Counter Statistics
+                </h4>
+                <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-slate-600 font-bold mb-1">YouTube School Tour Video</label>
+                    <label className="text-[10px] text-slate-400 block font-semibold">Total Students</label>
                     <input
                       type="text"
-                      value={content.hero.tourVideoUrl}
-                      onChange={(e) => setContent({ ...content, hero: { ...content.hero, tourVideoUrl: e.target.value } })}
-                      className="w-full border border-slate-200 rounded-xl p-2 text-xs font-mono"
+                      value={content.stats.students}
+                      onChange={(e) =>
+                        setContent({ ...content, stats: { ...content.stats, students: e.target.value } })
+                      }
+                      className="w-full bg-slate-900 text-yellow-400 font-black text-sm px-2 py-1.5 rounded-lg border border-slate-700"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[10px] text-slate-400 block font-semibold">Teachers Count</label>
+                    <input
+                      type="text"
+                      value={content.stats.teachers}
+                      onChange={(e) =>
+                        setContent({ ...content, stats: { ...content.stats, teachers: e.target.value } })
+                      }
+                      className="w-full bg-slate-900 text-yellow-400 font-black text-sm px-2 py-1.5 rounded-lg border border-slate-700"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[10px] text-slate-400 block font-semibold">Student-Teacher Ratio</label>
+                    <input
+                      type="text"
+                      value={content.stats.ratio}
+                      onChange={(e) =>
+                        setContent({ ...content, stats: { ...content.stats, ratio: e.target.value } })
+                      }
+                      className="w-full bg-slate-900 text-yellow-400 font-black text-sm px-2 py-1.5 rounded-lg border border-slate-700"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[10px] text-slate-400 block font-semibold">Academic Pass Rate</label>
+                    <input
+                      type="text"
+                      value={content.stats.passRate}
+                      onChange={(e) =>
+                        setContent({ ...content, stats: { ...content.stats, passRate: e.target.value } })
+                      }
+                      className="w-full bg-slate-900 text-yellow-400 font-black text-sm px-2 py-1.5 rounded-lg border border-slate-700"
                     />
                   </div>
                 </div>
               </div>
-            )}
+            </div>
+          )}
 
-            {/* TAB: POPUP */}
-            {activeTab === "popup" && (
-              <div className="p-4 rounded-2xl border border-amber-300 space-y-4" style={{ background: "var(--bg-peach)" }}>
+          {/* ==================================================== */}
+          {/* TAB 6: POPUP ALERT */}
+          {/* ==================================================== */}
+          {activeTab === "popup" && (
+            <div className="space-y-6">
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-extrabold text-white flex items-center gap-2">
+                  <span>🚨</span> Admissions / Urgent Pop-up Alert
+                </h3>
+                <button
+                  onClick={() => locateSection("live-popup", "home")}
+                  className="text-xs bg-rose-600 hover:bg-rose-500 text-white font-bold px-2.5 py-1 rounded-md"
+                >
+                  📍 Locate on Site
+                </button>
+              </div>
+
+              <div className="bg-slate-800/80 p-4 rounded-2xl border border-slate-700 space-y-4">
                 <div className="flex items-center justify-between">
-                  <div>
-                    <h3 className="font-extrabold text-sm text-amber-950">Urgent Campus Alert Pop-up</h3>
-                    <p className="text-slate-600 text-[11px]">Displays a modal banner to parents when visiting the website.</p>
-                  </div>
+                  <span className="text-xs font-bold text-white">Enable Pop-up Modal on Website:</span>
                   <label className="relative inline-flex items-center cursor-pointer">
                     <input
                       type="checkbox"
                       checked={content.popupAlert.enabled}
-                      onChange={(e) => {
-                        setContent({ ...content, popupAlert: { ...content.popupAlert, enabled: e.target.checked } });
-                        if (e.target.checked) locateSection("live-popup");
-                      }}
+                      onChange={(e) =>
+                        setContent({
+                          ...content,
+                          popupAlert: { ...content.popupAlert, enabled: e.target.checked },
+                        })
+                      }
                       className="sr-only peer"
                     />
-                    <div className="w-11 h-6 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-amber-500"></div>
+                    <div className="w-11 h-6 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500"></div>
                   </label>
                 </div>
 
-                <div className="space-y-3 pt-2">
-                  <div>
-                    <label className="block text-slate-700 font-bold mb-1">Alert Headline</label>
-                    <input
-                      type="text"
-                      value={content.popupAlert.title}
-                      onChange={(e) => setContent({ ...content, popupAlert: { ...content.popupAlert, title: e.target.value } })}
-                      className="w-full border border-slate-300 rounded-xl p-2 font-bold bg-white"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-slate-700 font-bold mb-1">Alert Message</label>
-                    <textarea
-                      rows={3}
-                      value={content.popupAlert.message}
-                      onChange={(e) => setContent({ ...content, popupAlert: { ...content.popupAlert, message: e.target.value } })}
-                      className="w-full border border-slate-300 rounded-xl p-2 font-medium bg-white"
-                    />
-                  </div>
-
-                  <button
-                    onClick={() => locateSection("live-popup")}
-                    className="px-4 py-2 rounded-xl text-white font-extrabold shadow-sm"
-                    style={{ background: "var(--orange)" }}
-                  >
-                    🎯 Preview Pop-up on Site
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {/* TAB: STATS */}
-            {activeTab === "stats" && (
-              <div className="space-y-5">
-                <div className="p-4 rounded-2xl border border-slate-200 bg-white shadow-sm space-y-3">
-                  <div className="flex items-center justify-between">
-                    <span className="font-extrabold uppercase text-[11px] text-blue-900">Key School Numbers</span>
-                    <button onClick={() => locateSection("live-stats")} className="text-amber-600 font-bold hover:underline">
-                      🎯 Locate Stats
-                    </button>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="p-3 rounded-xl border border-slate-200 bg-slate-50">
-                      <span className="text-[10px] font-bold text-slate-500 uppercase">Total Students</span>
-                      <input
-                        type="text"
-                        value={content.stats.students}
-                        onChange={(e) => setContent({ ...content, stats: { ...content.stats, students: e.target.value } })}
-                        onFocus={() => locateSection("live-stats")}
-                        className="w-full text-xl font-black text-blue-600 border border-slate-300 rounded-lg p-1.5 mt-1 font-mono bg-white"
-                      />
-                    </div>
-                    <div className="p-3 rounded-xl border border-slate-200 bg-slate-50">
-                      <span className="text-[10px] font-bold text-slate-500 uppercase">Expert Teachers</span>
-                      <input
-                        type="text"
-                        value={content.stats.teachers}
-                        onChange={(e) => setContent({ ...content, stats: { ...content.stats, teachers: e.target.value } })}
-                        onFocus={() => locateSection("live-stats")}
-                        className="w-full text-xl font-black text-emerald-600 border border-slate-300 rounded-lg p-1.5 mt-1 font-mono bg-white"
-                      />
-                    </div>
-                    <div className="p-3 rounded-xl border border-slate-200 bg-slate-50">
-                      <span className="text-[10px] font-bold text-slate-500 uppercase">Student Ratio</span>
-                      <input
-                        type="text"
-                        value={content.stats.ratio}
-                        onChange={(e) => setContent({ ...content, stats: { ...content.stats, ratio: e.target.value } })}
-                        onFocus={() => locateSection("live-stats")}
-                        className="w-full text-xl font-black text-amber-600 border border-slate-300 rounded-lg p-1.5 mt-1 font-mono bg-white"
-                      />
-                    </div>
-                    <div className="p-3 rounded-xl border border-slate-200 bg-slate-50">
-                      <span className="text-[10px] font-bold text-slate-500 uppercase">CBSE Pass Rate</span>
-                      <input
-                        type="text"
-                        value={content.stats.passRate}
-                        onChange={(e) => setContent({ ...content, stats: { ...content.stats, passRate: e.target.value } })}
-                        onFocus={() => locateSection("live-stats")}
-                        className="w-full text-xl font-black text-purple-600 border border-slate-300 rounded-lg p-1.5 mt-1 font-mono bg-white"
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                <div className="p-4 rounded-2xl border border-slate-200 bg-white shadow-sm space-y-3">
-                  <div className="flex items-center justify-between">
-                    <span className="font-extrabold uppercase text-[11px] text-blue-900">
-                      Teachers Directory ({content.teachers.length})
-                    </span>
-                    <button
-                      onClick={() => {
-                        const name = prompt("Teacher Name (e.g. Mrs. Priya R.):");
-                        if (!name) return;
-                        const qual = prompt("Qualification:", "B.Sc., B.Ed.") || "B.Ed.";
-                        const role = prompt("Subject / Standard:", "Primary Teacher") || "Teacher";
-                        setContent({ ...content, teachers: [...content.teachers, { name, qualification: qual, role }] });
-                        showToast("Added new teacher!");
-                      }}
-                      className="bg-blue-600 text-white font-bold px-2.5 py-1 rounded-lg text-[11px]"
-                    >
-                      + Add Teacher
-                    </button>
-                  </div>
-
-                  <div className="space-y-2 max-h-60 overflow-y-auto custom-scrollbar">
-                    {content.teachers.map((t: TeacherItem, idx: number) => (
-                      <div key={idx} className="p-2.5 rounded-xl border border-slate-200 bg-slate-50 flex items-center justify-between">
-                        <div>
-                          <div className="font-bold text-slate-800">{t.name}</div>
-                          <div className="text-[11px] text-slate-500">{t.qualification} • {t.role}</div>
-                        </div>
-                        <button
-                          onClick={() => {
-                            const updated = content.teachers.filter((_: TeacherItem, i: number) => i !== idx);
-                            setContent({ ...content, teachers: updated });
-                            showToast("Deleted teacher");
-                          }}
-                          className="text-red-500 hover:underline font-bold text-[11px]"
-                        >
-                          Delete
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* TAB: FEES */}
-            {activeTab === "fees" && (
-              <div className="space-y-4">
-                <div className="p-4 rounded-2xl border border-slate-200 bg-white shadow-sm space-y-3">
-                  <div className="flex items-center justify-between">
-                    <span className="font-extrabold uppercase text-[11px] text-blue-900">Tuition Fee Slabs</span>
-                    <button onClick={() => locateSection("live-fees")} className="text-amber-600 font-bold hover:underline">
-                      🎯 Locate Fees
-                    </button>
-                  </div>
-
-                  <div className="space-y-2">
-                    {content.fees.tuition.map((slab: TuitionSlab, idx: number) => (
-                      <div key={idx} className="p-2 rounded-xl border border-slate-200 bg-slate-50 flex items-center justify-between">
-                        <span className="font-bold text-slate-700">{slab.standard}</span>
-                        <input
-                          type="text"
-                          value={slab.amount}
-                          onChange={(e) => {
-                            const updated = [...content.fees.tuition];
-                            updated[idx].amount = e.target.value;
-                            setContent({ ...content, fees: { ...content.fees, tuition: updated } });
-                          }}
-                          className="w-24 text-right font-black border border-slate-300 rounded-lg p-1 bg-white"
-                        />
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="p-4 rounded-2xl border border-slate-200 bg-white shadow-sm space-y-3">
-                  <span className="font-extrabold uppercase text-[11px] text-amber-900">School Bus Transport Slabs</span>
-                  <div className="space-y-2">
-                    {content.fees.bus.map((b: BusSlab, idx: number) => (
-                      <div key={idx} className="p-2 rounded-xl border border-slate-200 bg-slate-50 flex items-center justify-between">
-                        <span className="font-bold text-slate-700">{b.route}</span>
-                        <input
-                          type="text"
-                          value={b.amount}
-                          onChange={(e) => {
-                            const updated = [...content.fees.bus];
-                            updated[idx].amount = e.target.value;
-                            setContent({ ...content, fees: { ...content.fees, bus: updated } });
-                          }}
-                          className="w-24 text-right font-black border border-slate-300 rounded-lg p-1 bg-white"
-                        />
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* TAB: CAMPUS INFO */}
-            {activeTab === "contact" && (
-              <div className="p-4 rounded-2xl border border-slate-200 bg-white shadow-sm space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="font-extrabold uppercase text-[11px] text-blue-900">School Campus & Contact</span>
-                  <button onClick={() => locateSection("live-footer")} className="text-amber-600 font-bold hover:underline">
-                    🎯 Locate Footer
-                  </button>
+                <div>
+                  <label className="text-[11px] text-slate-400 block font-semibold mb-1">Pop-up Title</label>
+                  <input
+                    type="text"
+                    value={content.popupAlert.title}
+                    onChange={(e) =>
+                      setContent({
+                        ...content,
+                        popupAlert: { ...content.popupAlert, title: e.target.value },
+                      })
+                    }
+                    className="w-full bg-slate-900 text-white text-xs px-3 py-2 rounded-xl border border-slate-700"
+                  />
                 </div>
 
                 <div>
-                  <label className="block text-slate-600 font-bold mb-1">Campus Full Address</label>
+                  <label className="text-[11px] text-slate-400 block font-semibold mb-1">Pop-up Message</label>
                   <textarea
                     rows={3}
+                    value={content.popupAlert.message}
+                    onChange={(e) =>
+                      setContent({
+                        ...content,
+                        popupAlert: { ...content.popupAlert, message: e.target.value },
+                      })
+                    }
+                    className="w-full bg-slate-900 text-white text-xs p-2 rounded-xl border border-slate-700"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-[11px] text-slate-400 block font-semibold mb-1">CTA Button Text</label>
+                  <input
+                    type="text"
+                    value={content.popupAlert.ctaText}
+                    onChange={(e) =>
+                      setContent({
+                        ...content,
+                        popupAlert: { ...content.popupAlert, ctaText: e.target.value },
+                      })
+                    }
+                    className="w-full bg-slate-900 text-white text-xs px-3 py-2 rounded-xl border border-slate-700"
+                  />
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ==================================================== */}
+          {/* TAB 7: CAMPUS INFO & CONTACT */}
+          {/* ==================================================== */}
+          {activeTab === "contact" && (
+            <div className="space-y-6">
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-extrabold text-white flex items-center gap-2">
+                  <span>📍</span> Campus Address & Contact Info
+                </h3>
+                <button
+                  onClick={() => locateSection("live-contact", "home")}
+                  className="text-xs bg-slate-700 hover:bg-slate-600 text-white font-bold px-2.5 py-1 rounded-md"
+                >
+                  📍 Locate on Site
+                </button>
+              </div>
+
+              <div className="bg-slate-800/80 p-4 rounded-2xl border border-slate-700 space-y-3">
+                <div>
+                  <label className="text-[11px] text-slate-400 block font-semibold mb-1">School Name</label>
+                  <input
+                    type="text"
+                    value={content.contact.schoolName}
+                    onChange={(e) =>
+                      setContent({
+                        ...content,
+                        contact: { ...content.contact, schoolName: e.target.value },
+                      })
+                    }
+                    className="w-full bg-slate-900 text-white text-xs px-3 py-2 rounded-xl border border-slate-700"
+                  />
+                </div>
+                <div>
+                  <label className="text-[11px] text-slate-400 block font-semibold mb-1">Address</label>
+                  <textarea
+                    rows={2}
                     value={content.contact.address}
-                    onChange={(e) => setContent({ ...content, contact: { ...content.contact, address: e.target.value } })}
-                    className="w-full border border-slate-200 rounded-xl p-2 font-medium"
+                    onChange={(e) =>
+                      setContent({
+                        ...content,
+                        contact: { ...content.contact, address: e.target.value },
+                      })
+                    }
+                    className="w-full bg-slate-900 text-white text-xs p-2 rounded-xl border border-slate-700"
                   />
                 </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <label className="text-[11px] text-slate-400 block font-semibold mb-1">Phone</label>
+                    <input
+                      type="text"
+                      value={content.contact.phone}
+                      onChange={(e) =>
+                        setContent({
+                          ...content,
+                          contact: { ...content.contact, phone: e.target.value },
+                        })
+                      }
+                      className="w-full bg-slate-900 text-white text-xs px-3 py-2 rounded-xl border border-slate-700"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[11px] text-slate-400 block font-semibold mb-1">Email</label>
+                    <input
+                      type="text"
+                      value={content.contact.email}
+                      onChange={(e) =>
+                        setContent({
+                          ...content,
+                          contact: { ...content.contact, email: e.target.value },
+                        })
+                      }
+                      className="w-full bg-slate-900 text-white text-xs px-3 py-2 rounded-xl border border-slate-700"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
 
-                <div>
-                  <label className="block text-slate-600 font-bold mb-1">Primary Email</label>
-                  <input
-                    type="text"
-                    value={content.contact.email}
-                    onChange={(e) => setContent({ ...content, contact: { ...content.contact, email: e.target.value } })}
-                    className="w-full border border-slate-200 rounded-xl p-2 font-medium"
-                  />
+        </div>
+
+        {/* RIGHT COLUMN: LIVE WEBSITE INSPECTOR (MIMICS REAL SITE EXACTLY) */}
+        <div className="hidden lg:flex flex-1 bg-slate-950 flex-col overflow-hidden p-4 items-center justify-center">
+          
+          <div
+            className={`w-full h-full bg-[#FFFDF7] rounded-2xl overflow-y-auto custom-scrollbar shadow-2xl transition-all duration-300 ${
+              deviceMode === "mobile"
+                ? "preview-phone max-w-[390px] h-[92vh]"
+                : deviceMode === "tablet"
+                ? "preview-tablet max-w-[768px] h-[92vh]"
+                : "max-w-full h-full"
+            }`}
+            ref={previewScrollRef}
+          >
+            
+            {/* LIVE INSPECTOR: PAGE 1 - HOME PAGE */}
+            {previewPage === "home" && (
+              <div>
+                {/* Top Announcement Bar */}
+                <div
+                  id="live-topbar"
+                  className={`top-bar ${highlightedSection === "live-topbar" ? "site-highlight" : ""}`}
+                >
+                  <div className="top-bar-inner">
+                    <span>{content.announcement.text}</span>
+                    <span className="sep">•</span>
+                    <span>{content.announcement.gradePill}</span>
+                    <span className="sep">•</span>
+                    <span>{content.announcement.cbsePill}</span>
+                    <span className="sep">•</span>
+                    <span>📞 {content.announcement.phone}</span>
+                  </div>
                 </div>
 
-                <div>
-                  <label className="block text-slate-600 font-bold mb-1">Google Maps Direction URL</label>
-                  <input
-                    type="text"
-                    value={content.contact.mapUrl}
-                    onChange={(e) => setContent({ ...content, contact: { ...content.contact, mapUrl: e.target.value } })}
-                    className="w-full border border-slate-200 rounded-xl p-2 font-mono text-xs"
-                  />
+                {/* Navbar */}
+                <nav className="navbar">
+                  <div className="navbar-inner">
+                    <div className="navbar-brand">
+                      <img src="/emblem.png" alt="Logo" className="navbar-logo" />
+                      <div className="navbar-brand-text">
+                        <span className="navbar-school-name">{content.contact.schoolName}</span>
+                        <span className="navbar-school-sub">Budapadi, Erode • CBSE Integrated</span>
+                      </div>
+                    </div>
+                  </div>
+                </nav>
+
+                {/* Hero Section */}
+                <section
+                  id="live-hero"
+                  className={`hero ${highlightedSection === "live-hero" ? "site-highlight" : ""}`}
+                >
+                  <div className="hero-inner">
+                    <div className="hero-content">
+                      <div className="hero-badge">
+                        <span className="emoji">⭐</span> {content.hero.badge}
+                      </div>
+                      <h1 className="hero-title">
+                        {content.hero.titleLine1} <br />
+                        {content.hero.titleLine2}
+                        <span className="highlight">{content.hero.titleHighlight}</span>
+                      </h1>
+                      <p className="hero-desc">{content.hero.desc}</p>
+                      <div className="hero-buttons">
+                        <span className="btn-primary">Enroll Now →</span>
+                        <span className="btn-secondary">▶ Watch Tour</span>
+                      </div>
+                    </div>
+                    <div className="hero-visual">
+                      <div className="hero-card">
+                        <img
+                          src={content.hero.heroImage}
+                          alt="Hero Student"
+                          className="hero-card-img"
+                        />
+                        <div className="hero-card-footer">
+                          <img src="/emblem.png" alt="Emblem" className="hero-card-logo" />
+                          <div className="hero-card-info">
+                            <div className="hero-card-name">{content.contact.schoolName}</div>
+                            <div className="hero-card-loc">Budapadi, Anthiyur Taluk</div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </section>
+
+                {/* Marquee Section */}
+                <section
+                  id="live-marquee"
+                  className={`photo-strip ${highlightedSection === "live-marquee" ? "site-highlight" : ""}`}
+                >
+                  <div className="photo-strip-inner">
+                    {content.marquee.slice(0, 10).map((src, i) => (
+                      <img key={i} src={src} alt="School Marquee" className="photo-strip-img" />
+                    ))}
+                  </div>
+                </section>
+
+                {/* Counter Stats */}
+                <section
+                  id="live-stats"
+                  className={`stats-section ${highlightedSection === "live-stats" ? "site-highlight" : ""}`}
+                >
+                  <div className="stats-grid">
+                    <div className="stat-card">
+                      <div className="stat-number">{content.stats.students}</div>
+                      <div className="stat-label">Happy Students</div>
+                    </div>
+                    <div className="stat-card">
+                      <div className="stat-number">{content.stats.teachers}</div>
+                      <div className="stat-label">Caring Teachers</div>
+                    </div>
+                    <div className="stat-card">
+                      <div className="stat-number">{content.stats.ratio}</div>
+                      <div className="stat-label">Student:Teacher Ratio</div>
+                    </div>
+                    <div className="stat-card">
+                      <div className="stat-number">{content.stats.passRate}</div>
+                      <div className="stat-label">Academic Success</div>
+                    </div>
+                  </div>
+                </section>
+              </div>
+            )}
+
+            {/* LIVE INSPECTOR: PAGE 2 - FEES OVERVIEW (/fees) */}
+            {previewPage === "fees" && (
+              <div className="fees-page" style={{ paddingTop: "20px", minHeight: "100%" }}>
+                <div className="fees-hero">
+                  <h1 className="fees-title">Transparent & Premium Education</h1>
+                  <p className="fees-subtitle">Fee Structure for Academic Year 2026-2027</p>
+                </div>
+
+                <div
+                  id="live-fees-cards"
+                  className={`fees-content ${highlightedSection === "live-fees-cards" ? "site-highlight" : ""}`}
+                >
+                  <div className="fees-grid">
+                    {/* Tuition Card */}
+                    <div className="fee-card card-blue">
+                      <div className="fee-icon">🎓</div>
+                      <h3>{content.fees?.overview?.tuition?.title}</h3>
+                      <p className="fee-desc">{content.fees?.overview?.tuition?.desc}</p>
+                      <div className="fee-price">
+                        <span className="amount">{content.fees?.overview?.tuition?.amount}</span>
+                        <span className="period">{content.fees?.overview?.tuition?.period}</span>
+                      </div>
+                      <ul className="fee-features">
+                        {content.fees?.overview?.tuition?.features?.map((f, i) => (
+                          <li key={i}><i className="ti ti-check"></i> {f}</li>
+                        ))}
+                      </ul>
+                      <div
+                        onClick={() => setPreviewPage("school-fees")}
+                        className="mt-3 text-center text-xs font-bold text-blue-600 cursor-pointer hover:underline"
+                      >
+                        Click to view Class-wise breakdown (LKG to 5th) →
+                      </div>
+                    </div>
+
+                    {/* Book Card */}
+                    <div className="fee-card card-orange">
+                      <div className="fee-icon">📚</div>
+                      <h3>{content.fees?.overview?.book?.title}</h3>
+                      <p className="fee-desc">{content.fees?.overview?.book?.desc}</p>
+                      <div className="fee-price">
+                        <span className="amount">{content.fees?.overview?.book?.amount}</span>
+                        <span className="period">{content.fees?.overview?.book?.period}</span>
+                      </div>
+                      <ul className="fee-features">
+                        {content.fees?.overview?.book?.features?.map((f, i) => (
+                          <li key={i}><i className="ti ti-check"></i> {f}</li>
+                        ))}
+                      </ul>
+                    </div>
+
+                    {/* Bus Card */}
+                    <div className="fee-card card-green">
+                      <div className="fee-icon">🚌</div>
+                      <h3>{content.fees?.overview?.bus?.title}</h3>
+                      <p className="fee-desc">{content.fees?.overview?.bus?.desc}</p>
+                      <div className="fee-price">
+                        <span className="amount">{content.fees?.overview?.bus?.amount}</span>
+                        <span className="period">{content.fees?.overview?.bus?.period}</span>
+                      </div>
+                      <ul className="fee-features">
+                        {content.fees?.overview?.bus?.features?.map((f, i) => (
+                          <li key={i}><i className="ti ti-check"></i> {f}</li>
+                        ))}
+                      </ul>
+                    </div>
+
+                    {/* Activity Card */}
+                    <div className="fee-card card-pink">
+                      <div className="fee-icon">🎨</div>
+                      <h3>{content.fees?.overview?.activity?.title}</h3>
+                      <p className="fee-desc">{content.fees?.overview?.activity?.desc}</p>
+                      <div className="fee-price">
+                        <span className="amount">{content.fees?.overview?.activity?.amount}</span>
+                        <span className="period">{content.fees?.overview?.activity?.period}</span>
+                      </div>
+                      <ul className="fee-features">
+                        {content.fees?.overview?.activity?.features?.map((f, i) => (
+                          <li key={i}><i className="ti ti-check"></i> {f}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  </div>
+
+                  <div className="fees-note mt-6">
+                    <p>{content.fees?.overview?.note}</p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* LIVE INSPECTOR: PAGE 3 - CLASS-WISE TUITION (/fees/school) */}
+            {previewPage === "school-fees" && (
+              <div className="fees-page" style={{ paddingTop: "40px", minHeight: "100%" }}>
+                <div className="section-container">
+                  <h1 style={{ color: "#1E3A5F", textAlign: "center", marginBottom: "20px", fontSize: "28px" }}>
+                    School Tuition Fees (2026-27)
+                  </h1>
+
+                  <div
+                    id="live-school-table"
+                    className={`max-w-[550px] mx-auto bg-white rounded-2xl p-6 shadow-xl border border-slate-100 ${
+                      highlightedSection === "live-school-table" ? "site-highlight" : ""
+                    }`}
+                  >
+                    <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                      <thead>
+                        <tr style={{ background: "#f8fafc", borderBottom: "2px solid #e2e8f0" }}>
+                          <th style={{ padding: "12px", textAlign: "left", fontWeight: 800, fontSize: "14px" }}>
+                            Class
+                          </th>
+                          <th style={{ padding: "12px", textAlign: "right", fontWeight: 800, fontSize: "14px" }}>
+                            2026-27 Fees (Rs.)
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {content.fees?.classList?.map((item, idx) => (
+                          <tr key={idx} style={{ borderBottom: "1px solid #f1f5f9" }}>
+                            <td style={{ padding: "12px", fontWeight: 600, fontSize: "14px" }}>
+                              {item.standard}
+                            </td>
+                            <td style={{ padding: "12px", textAlign: "right", fontWeight: 700, color: "#1E3A5F", fontSize: "14px" }}>
+                              {item.amount.startsWith("₹") ? item.amount : `₹${item.amount}`}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* LIVE INSPECTOR: PAGE 4 - TEACHERS (/teachers) */}
+            {previewPage === "teachers" && (
+              <div className="fees-page" style={{ paddingTop: "40px", minHeight: "100%" }}>
+                <div className="section-container">
+                  <h1 style={{ color: "#1E3A5F", textAlign: "center", marginBottom: "16px", fontSize: "28px" }}>
+                    Our Teachers
+                  </h1>
+                  <p style={{ textAlign: "center", marginBottom: "28px", color: "#64748B", fontSize: "15px" }}>
+                    Meet our dedicated team of educators shaping young minds.
+                  </p>
+
+                  <div
+                    id="live-teachers"
+                    className={`grid grid-cols-2 gap-4 max-w-[700px] mx-auto ${
+                      highlightedSection === "live-teachers" ? "site-highlight" : ""
+                    }`}
+                  >
+                    {content.teachers?.map((t, idx) => (
+                      <div
+                        key={idx}
+                        className="bg-white p-4 rounded-xl border border-slate-200 text-center shadow-sm"
+                      >
+                        <h4 className="font-extrabold text-slate-800 text-sm mb-1">{t.name}</h4>
+                        <p className="text-blue-600 font-bold text-xs mb-1.5">{t.qualification}</p>
+                        {t.role && (
+                          <span className="inline-block bg-amber-100 text-amber-800 font-extrabold text-[10px] px-2 py-0.5 rounded-full">
+                            {t.role}
+                          </span>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* LIVE INSPECTOR: PAGE 5 - STUDENTS (/students) */}
+            {previewPage === "students" && (
+              <div className="fees-page" style={{ paddingTop: "40px", minHeight: "100%" }}>
+                <div className="section-container">
+                  <h1 style={{ color: "#1E3A5F", textAlign: "center", marginBottom: "16px", fontSize: "28px" }}>
+                    Student Details
+                  </h1>
+
+                  <div
+                    id="live-students"
+                    className={`max-w-[550px] mx-auto bg-white rounded-2xl p-6 shadow-xl border border-slate-100 text-center ${
+                      highlightedSection === "live-students" ? "site-highlight" : ""
+                    }`}
+                  >
+                    <h2 className="text-2xl font-black text-blue-700 mb-2">{content.students?.totalCount}</h2>
+                    <p className="text-slate-600 text-sm mb-6">{content.students?.desc}</p>
+                    <div className="flex justify-around gap-4">
+                      <div className="p-4 bg-orange-50 rounded-xl flex-1 border border-orange-100">
+                        <h3 className="text-xl font-black text-orange-600 mb-1">{content.students?.prePrimaryLabel}</h3>
+                        <p className="text-xs text-slate-600">{content.students?.prePrimarySub}</p>
+                      </div>
+                      <div className="p-4 bg-emerald-50 rounded-xl flex-1 border border-emerald-100">
+                        <h3 className="text-xl font-black text-emerald-600 mb-1">{content.students?.primaryLabel}</h3>
+                        <p className="text-xs text-slate-600">{content.students?.primarySub}</p>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
             )}
 
           </div>
-        </div>
-
-        {/* RIGHT PANE */}
-        <div className="flex-1 bg-slate-100 flex flex-col overflow-hidden">
-          
-          <div className="bg-slate-200/80 px-4 py-2 border-b border-slate-300 flex items-center justify-between text-xs flex-shrink-0">
-            <div className="flex items-center gap-2 flex-1 max-w-lg">
-              <div className="flex items-center gap-1.5">
-                <span className="w-2.5 h-2.5 rounded-full bg-red-400"></span>
-                <span className="w-2.5 h-2.5 rounded-full bg-amber-400"></span>
-                <span className="w-2.5 h-2.5 rounded-full bg-emerald-400"></span>
-              </div>
-              <div className="bg-white border border-slate-300 rounded-lg px-3 py-1 flex items-center justify-between text-slate-600 font-mono text-[11px] flex-1 shadow-inner">
-                <span className="truncate">https://www.sinaps.in/</span>
-                <span className="text-[10px] bg-blue-100 text-blue-800 px-1.5 py-0.5 rounded font-sans font-bold">
-                  Live View
-                </span>
-              </div>
-            </div>
-
-            <div className="text-slate-500 font-semibold text-[11px]">
-              Click any section to edit
-            </div>
-          </div>
-
-          <div ref={previewScrollRef} className="flex-1 overflow-y-auto p-3 md:p-6 custom-scrollbar">
-            
-            <div
-              className={`bg-white rounded-3xl overflow-hidden shadow-2xl transition-all duration-300 border border-slate-200 mx-auto relative ${
-                deviceMode === "mobile" ? "max-w-[390px] border-[8px] border-slate-800 rounded-[38px]" : deviceMode === "tablet" ? "max-w-[768px] border-[6px] border-slate-700" : "max-w-5xl"
-              }`}
-              style={{ background: "var(--bg-cream)" }}
-            >
-
-              {content.popupAlert.enabled && (
-                <div id="live-popup" className={`p-4 bg-amber-400 text-slate-900 border-b-2 border-amber-500 shadow-md ${highlightedSection === "live-popup" ? "ring-4 ring-orange-500" : ""}`}>
-                  <div className="max-w-4xl mx-auto flex items-center justify-between gap-3">
-                    <div>
-                      <div className="font-extrabold text-sm">{content.popupAlert.title}</div>
-                      <div className="text-xs text-amber-950 font-medium">{content.popupAlert.message}</div>
-                    </div>
-                    <a
-                      href={content.popupAlert.ctaLink}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="bg-slate-900 text-white font-extrabold text-xs px-3.5 py-2 rounded-xl shadow whitespace-nowrap"
-                    >
-                      {content.popupAlert.ctaText}
-                    </a>
-                  </div>
-                </div>
-              )}
-
-              {/* 1. TOPBAR */}
-              <div
-                id="live-topbar"
-                onClick={() => handleTabChange("announcements")}
-                className={`top-bar cursor-pointer transition-all ${
-                  highlightedSection === "live-topbar" ? "ring-4 ring-amber-400 ring-offset-2" : ""
-                }`}
-              >
-                <div className="top-bar-inner">
-                  <span>{content.announcement.text}</span>
-                  <span className="sep">·</span>
-                  <span>{content.announcement.gradePill}</span>
-                  <span className="sep">·</span>
-                  <span>{content.announcement.cbsePill}</span>
-                  <span className="sep">·</span>
-                  <a href={`tel:${content.announcement.phone.replace(/[^0-9+]/g, "")}`}>
-                    <i className="ti ti-phone-call" style={{ marginRight: 4 }}></i>
-                    {content.announcement.phone}
-                  </a>
-                </div>
-              </div>
-
-              {/* NAVBAR */}
-              <nav className="navbar" style={{ position: "relative" }}>
-                <div className="navbar-inner">
-                  <div className="navbar-brand">
-                    <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                      <Image
-                        src="/logo.png"
-                        alt="SINAPS Logo"
-                        width={48}
-                        height={48}
-                        style={{ borderRadius: "50%", objectFit: "cover" }}
-                      />
-                      <div style={{ display: "flex", flexDirection: "column", lineHeight: 1.15 }}>
-                        <span style={{ fontFamily: "var(--font-heading)", fontSize: "16px", fontWeight: 900, color: "var(--blue-dark)" }}>
-                          ST. IGNATIUS
-                        </span>
-                        <span style={{ fontFamily: "var(--font-body)", fontSize: "10px", fontWeight: 600, color: "var(--text-muted)" }}>
-                          Nursery & Primary School
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="navbar-links">
-                    <span className="navbar-link">Home</span>
-                    <span className="navbar-link">About</span>
-                    <span className="navbar-link">Academics</span>
-                    <span className="navbar-link">School Life</span>
-                    <span className="navbar-link">Fees</span>
-                    <span className="navbar-link">Admissions</span>
-                  </div>
-
-                  <div className="btn-primary navbar-cta">
-                    <i className="ti ti-brand-whatsapp" style={{ marginRight: 4 }}></i>
-                    Enquire on WhatsApp
-                  </div>
-                </div>
-              </nav>
-
-              {/* 2. HERO */}
-              <section
-                id="live-hero"
-                onClick={() => handleTabChange("announcements")}
-                className={`hero cursor-pointer transition-all ${
-                  highlightedSection === "live-hero" ? "ring-4 ring-amber-400 ring-offset-4" : ""
-                }`}
-                style={{ padding: "40px 20px" }}
-              >
-                <div className="hero-inner">
-                  <div className="hero-content">
-                    <div className="hero-badge">
-                      <span className="emoji">⭐</span>
-                      {content.hero.badge}
-                    </div>
-
-                    <h1 className="hero-title" style={{ fontSize: "clamp(28px, 4vw, 48px)" }}>
-                      {content.hero.titleLine1}<br />
-                      {content.hero.titleLine2}
-                      <span className="highlight" style={{ color: "var(--orange)" }}>
-                        {content.hero.titleHighlight}
-                      </span>
-                    </h1>
-
-                    <p className="hero-desc">{content.hero.desc}</p>
-
-                    <div className="hero-buttons">
-                      <div className="btn-primary">
-                        <i className="ti ti-brand-whatsapp" style={{ marginRight: 8 }}></i>
-                        Enquire on WhatsApp
-                      </div>
-                      <div className="btn-secondary">
-                        <i className="ti ti-player-play-filled"></i> Watch School Tour
-                      </div>
-                    </div>
-
-                    <div className="hero-pills">
-                      {content.hero.pills.map((p: string, i: number) => (
-                        <span key={i} className="hero-pill">{p}</span>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div
-                    id="live-hero-card"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleTabChange("photos");
-                    }}
-                    className={`hero-visual cursor-pointer transition-all ${
-                      highlightedSection === "live-hero-card" ? "ring-4 ring-orange-500 scale-105" : ""
-                    }`}
-                  >
-                    <div className="hero-card">
-                      <div style={{ position: "relative", width: "100%", height: 260, borderRadius: "18px 18px 0 0", overflow: "hidden" }}>
-                        <Image src={content.hero.heroImage} alt="Student" width={380} height={260} style={{ width: "100%", height: "100%", objectFit: "cover" }} priority />
-                      </div>
-                      <div className="hero-card-footer">
-                        <Image src="/logo.png" alt="Logo" width={44} height={44} className="hero-card-logo" />
-                        <div className="hero-card-info">
-                          <div className="hero-card-name">SINAPS Budapadi</div>
-                          <div className="hero-card-loc">Erode, Tamil Nadu</div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </section>
-
-              {/* 3. MARQUEE */}
-              <section
-                id="live-marquee"
-                onClick={() => handleTabChange("photos")}
-                className={`py-6 bg-slate-900 text-white cursor-pointer transition-all ${
-                  highlightedSection === "live-marquee" ? "ring-4 ring-amber-400 ring-offset-4" : ""
-                }`}
-              >
-                <div className="px-6 mb-3 flex items-center justify-between text-xs">
-                  <span className="font-extrabold uppercase tracking-widest text-slate-300">
-                    📸 School Life Photo Strip ({content.marquee.length} Photos)
-                  </span>
-                  <span className="bg-blue-600 text-white px-2 py-0.5 rounded text-[10px] font-bold">
-                    Auto-Marquee Strip
-                  </span>
-                </div>
-                <div className="flex gap-3 overflow-x-auto px-6 py-2 custom-scrollbar">
-                  {content.marquee.map((src: string, idx: number) => (
-                    <div key={idx} className="h-28 w-44 rounded-2xl overflow-hidden shadow-lg flex-shrink-0 border border-slate-700 bg-slate-800">
-                      <Image src={src} alt="School" width={176} height={112} className="w-full h-full object-cover" />
-                    </div>
-                  ))}
-                </div>
-              </section>
-
-              {/* 4. STATS */}
-              <section
-                id="live-stats"
-                onClick={() => handleTabChange("stats")}
-                className={`p-8 text-center cursor-pointer transition-all ${
-                  highlightedSection === "live-stats" ? "ring-4 ring-amber-400 ring-offset-4" : ""
-                }`}
-                style={{ background: "var(--blue-dark)", color: "#ffffff" }}
-              >
-                <h3 style={{ fontFamily: "var(--font-heading)", fontSize: "24px", fontWeight: 900, marginBottom: "20px" }}>
-                  Excellence in Numbers
-                </h3>
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: "16px" }}>
-                  <div className="p-4 rounded-2xl bg-white/10 backdrop-blur-sm border border-white/20">
-                    <div style={{ fontSize: "32px", fontWeight: 900, color: "var(--yellow)" }}>{content.stats.students}</div>
-                    <div style={{ fontSize: "12px", fontWeight: 700 }}>Happy Students</div>
-                  </div>
-                  <div className="p-4 rounded-2xl bg-white/10 backdrop-blur-sm border border-white/20">
-                    <div style={{ fontSize: "32px", fontWeight: 900, color: "var(--green)" }}>{content.stats.teachers}</div>
-                    <div style={{ fontSize: "12px", fontWeight: 700 }}>Qualified Teachers</div>
-                  </div>
-                  <div className="p-4 rounded-2xl bg-white/10 backdrop-blur-sm border border-white/20">
-                    <div style={{ fontSize: "32px", fontWeight: 900, color: "var(--orange)" }}>{content.stats.ratio}</div>
-                    <div style={{ fontSize: "12px", fontWeight: 700 }}>Student Ratio</div>
-                  </div>
-                  <div className="p-4 rounded-2xl bg-white/10 backdrop-blur-sm border border-white/20">
-                    <div style={{ fontSize: "32px", fontWeight: 900, color: "var(--pink)" }}>{content.stats.passRate}</div>
-                    <div style={{ fontSize: "12px", fontWeight: 700 }}>CBSE Pass</div>
-                  </div>
-                </div>
-              </section>
-
-              {/* 5. FEES */}
-              <section
-                id="live-fees"
-                onClick={() => handleTabChange("fees")}
-                className={`p-8 cursor-pointer transition-all ${
-                  highlightedSection === "live-fees" ? "ring-4 ring-amber-400 ring-offset-4" : ""
-                }`}
-                style={{ background: "#ffffff" }}
-              >
-                <h3 className="text-center font-extrabold text-xl mb-4" style={{ color: "var(--blue-dark)", fontFamily: "var(--font-heading)" }}>
-                  Tuition & Bus Transport Fees
-                </h3>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-2xl mx-auto text-xs">
-                  <div className="p-4 rounded-2xl border border-slate-200 bg-slate-50 space-y-2">
-                    <div className="font-extrabold text-blue-900">Pre-Primary (Pre-KG – UKG)</div>
-                    <div className="text-xl font-black text-blue-600">{content.fees.tuition[0]?.amount || "₹15,000"}</div>
-                    <div className="text-slate-500">Play-based Montessori & integrated activities</div>
-                  </div>
-                  <div className="p-4 rounded-2xl border border-slate-200 bg-slate-50 space-y-2">
-                    <div className="font-extrabold text-blue-900">Primary (Classes 1 to 5)</div>
-                    <div className="text-xl font-black text-blue-600">{content.fees.tuition[1]?.amount || "₹18,000"}</div>
-                    <div className="text-slate-500">CBSE Integrated curriculum & smart classes</div>
-                  </div>
-                </div>
-              </section>
-
-              {/* 6. FOOTER */}
-              <footer
-                id="live-footer"
-                onClick={() => handleTabChange("contact")}
-                className={`p-6 text-center text-xs space-y-2 cursor-pointer transition-all ${
-                  highlightedSection === "live-footer" ? "ring-4 ring-amber-400" : ""
-                }`}
-                style={{ background: "var(--blue-dark)", color: "rgba(255,255,255,0.7)" }}
-              >
-                <div style={{ color: "#ffffff", fontWeight: 800 }}>{content.contact.schoolName}</div>
-                <p>{content.contact.address}</p>
-                <p style={{ fontSize: "11px", color: "rgba(255,255,255,0.5)" }}>
-                  Admissions Helpline: {content.contact.phone} • {content.contact.email}
-                </p>
-              </footer>
-
-            </div>
-          </div>
-
         </div>
 
       </div>
