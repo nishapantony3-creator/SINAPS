@@ -7,8 +7,14 @@ import TopBar from "@/components/TopBar";
 import FloatingShapes from "@/components/FloatingShapes";
 import siteContent from "@/data/siteContent.json";
 
+interface Teacher {
+  name: string;
+  qualification: string;
+  role?: string;
+}
+
 export default function TeachersPage() {
-  const teachers = siteContent.teachers || [];
+  const teachers: Teacher[] = siteContent.teachers || [];
 
   return (
     <>
@@ -24,7 +30,7 @@ export default function TeachersPage() {
               Meet our dedicated team of educators shaping young minds.
             </p>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))', gap: '20px' }}>
-              {teachers.map((t: any, i: number) => (
+              {teachers.map((t: Teacher, i: number) => (
                 <div key={i} style={{ padding: '20px', border: '1px solid #eee', borderRadius: '14px', textAlign: 'center', background: 'var(--bg-cream)' }}>
                   <h3 style={{ margin: '0 0 8px 0', color: 'var(--blue-dark)', fontSize: '1.1rem' }}>{t.name}</h3>
                   <p style={{ margin: '0 0 6px 0', color: 'var(--blue)', fontWeight: 700, fontSize: '0.9rem' }}>{t.qualification}</p>

@@ -1,42 +1,145 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import Image from "next/image";
+
+interface AnnouncementConfig {
+  text: string;
+  gradePill: string;
+  cbsePill: string;
+  phone: string;
+  whatsappNumber: string;
+  whatsappMessage: string;
+}
+
+interface HeroConfig {
+  badge: string;
+  titleLine1: string;
+  titleLine2: string;
+  titleHighlight: string;
+  desc: string;
+  pills: string[];
+  heroImage: string;
+  tourVideoUrl: string;
+}
+
+interface PopupConfig {
+  enabled: boolean;
+  title: string;
+  message: string;
+  ctaText: string;
+  ctaLink: string;
+}
+
+interface StatsConfig {
+  students: string;
+  teachers: string;
+  ratio: string;
+  passRate: string;
+}
+
+interface TeacherItem {
+  name: string;
+  qualification: string;
+  role?: string;
+}
+
+interface TuitionSlab {
+  standard: string;
+  amount: string;
+  term?: string;
+}
+
+interface BusSlab {
+  route: string;
+  amount: string;
+  term?: string;
+}
+
+interface FeesConfig {
+  tuition: TuitionSlab[];
+  bus: BusSlab[];
+  note?: string;
+}
+
+interface ContactConfig {
+  schoolName: string;
+  address: string;
+  phone: string;
+  email: string;
+  mapUrl: string;
+}
+
+interface SiteContent {
+  announcement: AnnouncementConfig;
+  hero: HeroConfig;
+  marquee: string[];
+  popupAlert: PopupConfig;
+  stats: StatsConfig;
+  teachers: TeacherItem[];
+  students: {
+    total: string;
+    prePrimary: string;
+    primary: string;
+  };
+  fees: FeesConfig;
+  contact: ContactConfig;
+}
 
 export default function AdminPage() {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [pinInput, setPinInput] = useState<string>("");
   const [pinError, setPinError] = useState<string>("");
 
-  // Content state loaded from /api/admin/content
-  const [content, setContent] = useState<any>(null);
+  const [content, setContent] = useState<SiteContent | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [activeTab, setActiveTab] = useState<string>("photos");
   const [deviceMode, setDeviceMode] = useState<"desktop" | "tablet" | "mobile">("desktop");
   const [highlightedSection, setHighlightedSection] = useState<string | null>("live-marquee");
   
-  // Status feedback
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [isPublishing, setIsPublishing] = useState<boolean>(false);
   const [isUploading, setIsUploading] = useState<boolean>(false);
 
-  // Photos list
-  const [availablePhotos, setAvailablePhotos] = useState<any[]>([]);
-
-  // Preview iframe / container ref
   const previewScrollRef = useRef<HTMLDivElement>(null);
 
-  // Check saved session
-  useEffect(() => {
-    const savedPin = localStorage.getItem("sinaps_admin_pin");
-    if (savedPin === "sinaps2026") {
-      setIsAuthenticated(true);
-      fetchContent();
-      fetchPhotos();
-    } else {
+  const showToast = useCallback((msg: string) => {
+    setToastMessage(msg);
+    setTimeout(() => setToastMessage(null), 3500);
+  }, []);
+
+  const fetchContent = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const res = await fetch("/api/admin/content");
+      const json = await res.json();
+      if (json.success && json.data) {
+        setContent(json.data);
+      }
+    } catch (err) {
+      console.error("Failed to load content:", err);
+      showToast("Error loading content from server");
+    } finally {
       setIsLoading(false);
     }
+  }, [showToast]);
+
+  const fetchPhotos = useCallback(async () => {
+    try {
+      await fetch("/api/admin/photos");
+    } catch (err) {
+      console.error("Failed to list photos:", err);
+    }
   }, []);
+
+  useEffect(() => {
+    const savedPin = typeof window !== "undefined" ? localStorage.getItem("sinaps_admin_pin") : null;
+    if (savedPin === "sinaps2026") {
+      setIsAuthenticated(true);
+    }
+    fetchContent();
+    fetchPhotos();
+  }, [fetchContent, fetchPhotos]);
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
@@ -54,39 +157,6 @@ export default function AdminPage() {
   const handleLogout = () => {
     localStorage.removeItem("sinaps_admin_pin");
     setIsAuthenticated(false);
-  };
-
-  const showToast = (msg: string) => {
-    setToastMessage(msg);
-    setTimeout(() => setToastMessage(null), 3500);
-  };
-
-  const fetchContent = async () => {
-    setIsLoading(true);
-    try {
-      const res = await fetch("/api/admin/content");
-      const json = await res.json();
-      if (json.success && json.data) {
-        setContent(json.data);
-      }
-    } catch (err) {
-      console.error("Failed to load content:", err);
-      showToast("Error loading content from server");
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const fetchPhotos = async () => {
-    try {
-      const res = await fetch("/api/admin/photos");
-      const json = await res.json();
-      if (json.success && json.photos) {
-        setAvailablePhotos(json.photos);
-      }
-    } catch (err) {
-      console.error("Failed to list photos:", err);
-    }
   };
 
   const saveContent = async () => {
@@ -109,7 +179,6 @@ export default function AdminPage() {
     }
   };
 
-  // Highlighting engine: scrolls preview to element and triggers glowing outline
   const locateSection = (sectionId: string) => {
     setHighlightedSection(sectionId);
     setTimeout(() => {
@@ -119,7 +188,6 @@ export default function AdminPage() {
       }
     }, 100);
 
-    // Auto remove highlight pulse after 4s
     setTimeout(() => {
       setHighlightedSection((prev) => (prev === sectionId ? null : prev));
     }, 4000);
@@ -129,14 +197,12 @@ export default function AdminPage() {
     setActiveTab(tab);
     if (tab === "photos") locateSection("live-marquee");
     else if (tab === "announcements") locateSection("live-topbar");
-    else if (tab === "hero") locateSection("live-hero");
     else if (tab === "popup") locateSection("live-popup");
     else if (tab === "stats") locateSection("live-stats");
     else if (tab === "fees") locateSection("live-fees");
     else if (tab === "contact") locateSection("live-footer");
   };
 
-  // Upload photo handler with auto-compression
   const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -171,13 +237,11 @@ export default function AdminPage() {
     }
   };
 
-  // 1-Click Publish to Live Website
   const handlePublishLive = async () => {
     setIsPublishing(true);
     showToast("🚀 Syncing with GitHub & triggering Vercel build...");
 
     try {
-      // Save current content first
       await fetch("/api/admin/content", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -207,7 +271,6 @@ export default function AdminPage() {
     }
   };
 
-  // LOGIN SCREEN
   if (!isAuthenticated) {
     return (
       <div className="min-h-screen flex items-center justify-center p-4" style={{ background: "var(--bg-cream)" }}>
@@ -255,7 +318,6 @@ export default function AdminPage() {
     );
   }
 
-  // Loading state
   if (isLoading || !content) {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ background: "var(--bg-cream)" }}>
@@ -269,15 +331,12 @@ export default function AdminPage() {
 
   return (
     <div className="min-h-screen flex flex-col" style={{ background: "var(--bg-cream)", color: "var(--text-dark)" }}>
-      
-      {/* Toast Notification */}
       {toastMessage && (
-        <div className="fixed top-5 right-5 z-50 bg-slate-900 text-white px-5 py-3 rounded-2xl shadow-2xl border border-slate-700 flex items-center gap-3 animate-bounce-short text-xs font-bold">
+        <div className="fixed top-5 right-5 z-50 bg-slate-900 text-white px-5 py-3 rounded-2xl shadow-2xl border border-slate-700 flex items-center gap-3 text-xs font-bold">
           <span>{toastMessage}</span>
         </div>
       )}
 
-      {/* TOP HEADER */}
       <header className="px-6 py-3.5 border-b border-slate-200 flex flex-wrap items-center justify-between gap-4 sticky top-0 z-40" style={{ background: "#ffffff" }}>
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center overflow-hidden shadow-sm">
@@ -296,7 +355,6 @@ export default function AdminPage() {
           </div>
         </div>
 
-        {/* Center Device Switcher */}
         <div className="flex items-center bg-slate-100 p-1 rounded-2xl border border-slate-200 text-xs">
           <button
             onClick={() => setDeviceMode("desktop")}
@@ -324,7 +382,6 @@ export default function AdminPage() {
           </button>
         </div>
 
-        {/* Right Actions */}
         <div className="flex items-center gap-2.5">
           <button
             onClick={saveContent}
@@ -353,13 +410,11 @@ export default function AdminPage() {
         </div>
       </header>
 
-      {/* DUAL PANE WORKSPACE */}
       <div className="flex-1 flex flex-col lg:flex-row overflow-hidden" style={{ minHeight: "calc(100vh - 65px)" }}>
         
-        {/* LEFT PANE: CMS CONTROLLER & TABS (42% width) */}
+        {/* LEFT PANE */}
         <div className="w-full lg:w-[45%] xl:w-[40%] border-r border-slate-200 flex flex-col bg-white overflow-hidden shadow-sm">
           
-          {/* Navigation Tabs Bar */}
           <div className="bg-slate-50 px-4 py-2 border-b border-slate-200 flex items-center gap-1.5 overflow-x-auto custom-scrollbar flex-shrink-0 text-xs">
             <button
               onClick={() => handleTabChange("photos")}
@@ -411,10 +466,9 @@ export default function AdminPage() {
             </button>
           </div>
 
-          {/* Left Form Panels */}
           <div className="flex-1 overflow-y-auto p-5 space-y-6 custom-scrollbar text-xs">
 
-            {/* TAB: PHOTOS & MARQUEE */}
+            {/* TAB: PHOTOS */}
             {activeTab === "photos" && (
               <div className="space-y-5">
                 <div className="p-4 rounded-2xl border border-blue-200 flex items-center justify-between" style={{ background: "var(--bg-sky)" }}>
@@ -431,7 +485,6 @@ export default function AdminPage() {
                   </button>
                 </div>
 
-                {/* Active Hero Photo Selector */}
                 <div className="p-4 rounded-2xl border border-slate-200 space-y-3" style={{ background: "#ffffff" }}>
                   <div className="flex items-center justify-between">
                     <span className="font-extrabold uppercase text-[11px] text-blue-900">🌟 Active Hero Image</span>
@@ -441,27 +494,25 @@ export default function AdminPage() {
                   </div>
                   <div className="flex items-center gap-4">
                     <div className="w-28 h-20 rounded-xl overflow-hidden bg-slate-100 border border-slate-200 flex-shrink-0 relative">
-                      <img src={content.hero.heroImage} alt="Hero" className="w-full h-full object-cover" />
+                      <Image src={content.hero.heroImage} alt="Hero" width={112} height={80} className="w-full h-full object-cover" />
                     </div>
                     <div className="space-y-1 text-slate-600">
                       <p className="font-bold text-slate-800">Current: <code>{content.hero.heroImage}</code></p>
-                      <p className="text-[11px] text-slate-400">Click &quot;Make Hero&quot; on any photo below to instantly replace this image.</p>
+                      <p className="text-[11px] text-slate-400">Click &quot;Make Hero&quot; on any photo below to replace this image.</p>
                     </div>
                   </div>
                 </div>
 
-                {/* Upload Button */}
                 <div className="p-4 rounded-2xl border-2 border-dashed border-blue-300 hover:border-blue-500 text-center space-y-2 bg-blue-50/50">
                   <i className="ti ti-cloud-upload text-blue-600" style={{ fontSize: "2rem" }}></i>
                   <p className="font-extrabold text-slate-800">Upload New Photo (Auto-Resized)</p>
-                  <p className="text-[11px] text-slate-500">DSLR 20MB raw photos are auto-compressed with Sharp to &lt;150KB for fast 4G loading.</p>
+                  <p className="text-[11px] text-slate-500">Camera 20MB photos are auto-compressed with Sharp to &lt;150KB for fast 4G loading.</p>
                   <label className="inline-block mt-2 px-4 py-2 rounded-xl text-white font-extrabold cursor-pointer transition-all active:scale-95" style={{ background: "var(--blue)" }}>
                     Browse Image File
                     <input type="file" accept="image/*" className="hidden" onChange={handlePhotoUpload} disabled={isUploading} />
                   </label>
                 </div>
 
-                {/* Marquee Photo Cards */}
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
                     <h4 className="font-extrabold text-slate-800">Current Marquee Photos ({content.marquee.length})</h4>
@@ -472,7 +523,7 @@ export default function AdminPage() {
                     {content.marquee.map((src: string, idx: number) => (
                       <div key={idx} className="border border-slate-200 rounded-xl p-2 bg-slate-50 space-y-2 group shadow-sm">
                         <div className="h-24 rounded-lg overflow-hidden bg-slate-200 relative">
-                          <img src={src} alt={`Photo ${idx}`} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
+                          <Image src={src} alt={`Photo ${idx}`} width={120} height={96} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
                           <span className="absolute top-1 left-1 bg-blue-600 text-white text-[9px] font-bold px-1.5 rounded">
                             #{idx + 1}
                           </span>
@@ -496,7 +547,7 @@ export default function AdminPage() {
                           </button>
                           <button
                             onClick={() => {
-                              const updated = content.marquee.filter((_: any, i: number) => i !== idx);
+                              const updated = content.marquee.filter((_: string, i: number) => i !== idx);
                               setContent({ ...content, marquee: updated });
                               showToast("Removed from marquee");
                             }}
@@ -512,10 +563,9 @@ export default function AdminPage() {
               </div>
             )}
 
-            {/* TAB: ANNOUNCEMENTS & HERO */}
+            {/* TAB: ANNOUNCEMENTS */}
             {activeTab === "announcements" && (
               <div className="space-y-4">
-                {/* Top Announcement Bar */}
                 <div className="p-4 rounded-2xl border border-slate-200 space-y-3 bg-white shadow-sm">
                   <div className="flex items-center justify-between">
                     <span className="font-extrabold uppercase text-[11px] text-blue-900">1. Top Announcement Bar</span>
@@ -558,7 +608,6 @@ export default function AdminPage() {
                   </div>
                 </div>
 
-                {/* Hero Section */}
                 <div className="p-4 rounded-2xl border border-slate-200 space-y-3 bg-white shadow-sm">
                   <div className="flex items-center justify-between">
                     <span className="font-extrabold uppercase text-[11px] text-blue-900">2. Hero Heading & Subtitle</span>
@@ -624,13 +673,13 @@ export default function AdminPage() {
               </div>
             )}
 
-            {/* TAB: URGENT POP-UP ALERT */}
+            {/* TAB: POPUP */}
             {activeTab === "popup" && (
               <div className="p-4 rounded-2xl border border-amber-300 space-y-4" style={{ background: "var(--bg-peach)" }}>
                 <div className="flex items-center justify-between">
                   <div>
                     <h3 className="font-extrabold text-sm text-amber-950">Urgent Campus Alert Pop-up</h3>
-                    <p className="text-slate-600 text-[11px]">Displays an attention-grabbing modal banner to parents when visiting the website.</p>
+                    <p className="text-slate-600 text-[11px]">Displays a modal banner to parents when visiting the website.</p>
                   </div>
                   <label className="relative inline-flex items-center cursor-pointer">
                     <input
@@ -678,7 +727,7 @@ export default function AdminPage() {
               </div>
             )}
 
-            {/* TAB: STATS & TEAM */}
+            {/* TAB: STATS */}
             {activeTab === "stats" && (
               <div className="space-y-5">
                 <div className="p-4 rounded-2xl border border-slate-200 bg-white shadow-sm space-y-3">
@@ -733,7 +782,6 @@ export default function AdminPage() {
                   </div>
                 </div>
 
-                {/* Teachers Directory */}
                 <div className="p-4 rounded-2xl border border-slate-200 bg-white shadow-sm space-y-3">
                   <div className="flex items-center justify-between">
                     <span className="font-extrabold uppercase text-[11px] text-blue-900">
@@ -755,7 +803,7 @@ export default function AdminPage() {
                   </div>
 
                   <div className="space-y-2 max-h-60 overflow-y-auto custom-scrollbar">
-                    {content.teachers.map((t: any, idx: number) => (
+                    {content.teachers.map((t: TeacherItem, idx: number) => (
                       <div key={idx} className="p-2.5 rounded-xl border border-slate-200 bg-slate-50 flex items-center justify-between">
                         <div>
                           <div className="font-bold text-slate-800">{t.name}</div>
@@ -763,7 +811,7 @@ export default function AdminPage() {
                         </div>
                         <button
                           onClick={() => {
-                            const updated = content.teachers.filter((_: any, i: number) => i !== idx);
+                            const updated = content.teachers.filter((_: TeacherItem, i: number) => i !== idx);
                             setContent({ ...content, teachers: updated });
                             showToast("Deleted teacher");
                           }}
@@ -778,7 +826,7 @@ export default function AdminPage() {
               </div>
             )}
 
-            {/* TAB: FEES & BUS */}
+            {/* TAB: FEES */}
             {activeTab === "fees" && (
               <div className="space-y-4">
                 <div className="p-4 rounded-2xl border border-slate-200 bg-white shadow-sm space-y-3">
@@ -790,7 +838,7 @@ export default function AdminPage() {
                   </div>
 
                   <div className="space-y-2">
-                    {content.fees.tuition.map((slab: any, idx: number) => (
+                    {content.fees.tuition.map((slab: TuitionSlab, idx: number) => (
                       <div key={idx} className="p-2 rounded-xl border border-slate-200 bg-slate-50 flex items-center justify-between">
                         <span className="font-bold text-slate-700">{slab.standard}</span>
                         <input
@@ -811,7 +859,7 @@ export default function AdminPage() {
                 <div className="p-4 rounded-2xl border border-slate-200 bg-white shadow-sm space-y-3">
                   <span className="font-extrabold uppercase text-[11px] text-amber-900">School Bus Transport Slabs</span>
                   <div className="space-y-2">
-                    {content.fees.bus.map((b: any, idx: number) => (
+                    {content.fees.bus.map((b: BusSlab, idx: number) => (
                       <div key={idx} className="p-2 rounded-xl border border-slate-200 bg-slate-50 flex items-center justify-between">
                         <span className="font-bold text-slate-700">{b.route}</span>
                         <input
@@ -876,10 +924,9 @@ export default function AdminPage() {
           </div>
         </div>
 
-        {/* RIGHT PANE: LIVE INTERACTIVE PREVIEW (58% width) */}
+        {/* RIGHT PANE */}
         <div className="flex-1 bg-slate-100 flex flex-col overflow-hidden">
           
-          {/* Top Browser URL Bar */}
           <div className="bg-slate-200/80 px-4 py-2 border-b border-slate-300 flex items-center justify-between text-xs flex-shrink-0">
             <div className="flex items-center gap-2 flex-1 max-w-lg">
               <div className="flex items-center gap-1.5">
@@ -900,7 +947,6 @@ export default function AdminPage() {
             </div>
           </div>
 
-          {/* Website Viewport Area */}
           <div ref={previewScrollRef} className="flex-1 overflow-y-auto p-3 md:p-6 custom-scrollbar">
             
             <div
@@ -910,7 +956,6 @@ export default function AdminPage() {
               style={{ background: "var(--bg-cream)" }}
             >
 
-              {/* POPUP ALERT OVERLAY */}
               {content.popupAlert.enabled && (
                 <div id="live-popup" className={`p-4 bg-amber-400 text-slate-900 border-b-2 border-amber-500 shadow-md ${highlightedSection === "live-popup" ? "ring-4 ring-orange-500" : ""}`}>
                   <div className="max-w-4xl mx-auto flex items-center justify-between gap-3">
@@ -930,7 +975,7 @@ export default function AdminPage() {
                 </div>
               )}
 
-              {/* 1. LIVE TOPBAR */}
+              {/* 1. TOPBAR */}
               <div
                 id="live-topbar"
                 onClick={() => handleTabChange("announcements")}
@@ -952,7 +997,7 @@ export default function AdminPage() {
                 </div>
               </div>
 
-              {/* LIVE NAVBAR */}
+              {/* NAVBAR */}
               <nav className="navbar" style={{ position: "relative" }}>
                 <div className="navbar-inner">
                   <div className="navbar-brand">
@@ -991,7 +1036,7 @@ export default function AdminPage() {
                 </div>
               </nav>
 
-              {/* 2. LIVE HERO SECTION */}
+              {/* 2. HERO */}
               <section
                 id="live-hero"
                 onClick={() => handleTabChange("announcements")}
@@ -1034,7 +1079,6 @@ export default function AdminPage() {
                     </div>
                   </div>
 
-                  {/* Hero Card */}
                   <div
                     id="live-hero-card"
                     onClick={(e) => {
@@ -1047,7 +1091,7 @@ export default function AdminPage() {
                   >
                     <div className="hero-card">
                       <div style={{ position: "relative", width: "100%", height: 260, borderRadius: "18px 18px 0 0", overflow: "hidden" }}>
-                        <img src={content.hero.heroImage} alt="Student" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                        <Image src={content.hero.heroImage} alt="Student" width={380} height={260} style={{ width: "100%", height: "100%", objectFit: "cover" }} priority />
                       </div>
                       <div className="hero-card-footer">
                         <Image src="/logo.png" alt="Logo" width={44} height={44} className="hero-card-logo" />
@@ -1061,7 +1105,7 @@ export default function AdminPage() {
                 </div>
               </section>
 
-              {/* 3. LIVE PHOTO MARQUEE STRIP */}
+              {/* 3. MARQUEE */}
               <section
                 id="live-marquee"
                 onClick={() => handleTabChange("photos")}
@@ -1080,13 +1124,13 @@ export default function AdminPage() {
                 <div className="flex gap-3 overflow-x-auto px-6 py-2 custom-scrollbar">
                   {content.marquee.map((src: string, idx: number) => (
                     <div key={idx} className="h-28 w-44 rounded-2xl overflow-hidden shadow-lg flex-shrink-0 border border-slate-700 bg-slate-800">
-                      <img src={src} alt="School" className="w-full h-full object-cover" />
+                      <Image src={src} alt="School" width={176} height={112} className="w-full h-full object-cover" />
                     </div>
                   ))}
                 </div>
               </section>
 
-              {/* 4. LIVE STATS SECTION */}
+              {/* 4. STATS */}
               <section
                 id="live-stats"
                 onClick={() => handleTabChange("stats")}
@@ -1118,7 +1162,7 @@ export default function AdminPage() {
                 </div>
               </section>
 
-              {/* 5. LIVE FEES SECTION */}
+              {/* 5. FEES */}
               <section
                 id="live-fees"
                 onClick={() => handleTabChange("fees")}
@@ -1144,7 +1188,7 @@ export default function AdminPage() {
                 </div>
               </section>
 
-              {/* 6. LIVE FOOTER */}
+              {/* 6. FOOTER */}
               <footer
                 id="live-footer"
                 onClick={() => handleTabChange("contact")}
