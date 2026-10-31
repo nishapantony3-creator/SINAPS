@@ -82,7 +82,11 @@
         "amount": "22,000"
       },
       {
-        "standard": "IV & V",
+        "standard": "IV",
+        "amount": "23,100"
+      },
+      {
+        "standard": "V",
         "amount": "23,100"
       }
     ],

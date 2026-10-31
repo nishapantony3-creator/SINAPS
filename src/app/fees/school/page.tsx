@@ -14,7 +14,8 @@ export default function SchoolFeesPage() {
     { standard: "I", amount: "20,900" },
     { standard: "II", amount: "21,450" },
     { standard: "III", amount: "22,000" },
-    { standard: "IV & V", amount: "23,100" }
+    { standard: "IV", amount: "23,100" },
+    { standard: "V", amount: "23,100" }
   ];
 
   return (
