@@ -8,7 +8,7 @@ import FloatingShapes from "@/components/FloatingShapes";
 import siteContent from "@/data/siteContent.json";
 
 export default function BusFeesPage() {
-  const bus = siteContent.fees?.overview?.bus || {
+  const bus = siteContent.fees?.additional?.bus || {
     title: "School Bus Transport",
     amount: "₹1,500",
     period: "/ term (Base)",

@@ -44,7 +44,12 @@ interface TeacherItem {
   role?: string;
 }
 
-interface FeeOverviewCard {
+interface FeeClassItem {
+  standard: string;
+  amount: string;
+}
+
+interface AdditionalFeeItem {
   title: string;
   amount: string;
   period: string;
@@ -52,20 +57,14 @@ interface FeeOverviewCard {
   features: string[];
 }
 
-interface FeeClassItem {
-  standard: string;
-  amount: string;
-}
-
 interface FeesConfig {
-  overview: {
-    tuition: FeeOverviewCard;
-    book: FeeOverviewCard;
-    bus: FeeOverviewCard;
-    activity: FeeOverviewCard;
+  classList: FeeClassItem[];
+  additional: {
+    book: AdditionalFeeItem;
+    bus: AdditionalFeeItem;
+    activity: AdditionalFeeItem;
     note?: string;
   };
-  classList: FeeClassItem[];
 }
 
 interface StudentsConfig {
@@ -105,16 +104,16 @@ export default function AdminPage() {
   const [content, setContent] = useState<SiteContent | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   
-  // Tabs: 'fees' | 'photos' | 'home' | 'teachers' | 'students' | 'popup' | 'contact'
+  // Tabs: 'fees' | 'teachers' | 'photos' | 'home' | 'students' | 'popup' | 'contact'
   const [activeTab, setActiveTab] = useState<string>("fees");
   
   // Device Mode
   const [deviceMode, setDeviceMode] = useState<"desktop" | "tablet" | "mobile">("desktop");
   
-  // Live Preview Page Switcher: 'home' | 'fees' | 'school-fees' | 'teachers' | 'students'
-  const [previewPage, setPreviewPage] = useState<"home" | "fees" | "school-fees" | "teachers" | "students">("fees");
+  // Live Preview Page Switcher: 'fees' | 'school-fees' | 'home' | 'teachers' | 'students'
+  const [previewPage, setPreviewPage] = useState<"fees" | "school-fees" | "home" | "teachers" | "students">("fees");
 
-  const [highlightedSection, setHighlightedSection] = useState<string | null>("live-fees");
+  const [highlightedSection, setHighlightedSection] = useState<string | null>("live-fees-cards");
   
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [isPublishing, setIsPublishing] = useState<boolean>(false);
@@ -146,7 +145,6 @@ export default function AdminPage() {
   }, [showToast]);
 
   useEffect(() => {
-    // Dynamic Tailwind Loader Safeguard
     if (typeof window !== "undefined") {
       const existingScript = document.getElementById("sinaps-tailwind-cdn");
       if (!existingScript) {
@@ -189,7 +187,7 @@ export default function AdminPage() {
     setPinInput("");
   };
 
-  const locateSection = (sectionId: string, pageName?: "home" | "fees" | "school-fees" | "teachers" | "students") => {
+  const locateSection = (sectionId: string, pageName?: "fees" | "school-fees" | "home" | "teachers" | "students") => {
     if (pageName) {
       setPreviewPage(pageName);
     }
@@ -345,26 +343,31 @@ export default function AdminPage() {
     setContent({ ...content, fees: { ...content.fees, classList: updated } });
   };
 
-  // --- OVERVIEW FEES HELPERS ---
-  const handleOverviewFeeChange = (
-    key: "tuition" | "book" | "bus" | "activity",
+  // --- ADDITIONAL FEES HELPERS ---
+  const handleAdditionalFeeChange = (
+    key: "book" | "bus" | "activity",
     field: "amount" | "period" | "desc",
     val: string
   ) => {
     if (!content) return;
-    const overview = { ...content.fees.overview };
-    overview[key] = { ...overview[key], [field]: val };
-    setContent({ ...content, fees: { ...content.fees, overview } });
+    const additional = { ...content.fees.additional };
+    additional[key] = { ...additional[key], [field]: val };
+    setContent({ ...content, fees: { ...content.fees, additional } });
   };
 
+  // Lowest and highest tuition calculations for the live preview
+  const classList = content?.fees?.classList || [];
+  const lowestFee = classList.length > 0 ? classList[0].amount : "19,800";
+  const highestFee = classList.length > 0 ? classList[classList.length - 1].amount : "23,100";
+
   // ==========================================
-  // 1. PIN AUTHENTICATION SCREEN
+  // 1. PIN AUTHENTICATION SCREEN (School Theme)
   // ==========================================
   if (!isAuthenticated) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-[#1E3A5F] to-slate-900 flex items-center justify-center p-4">
-        <div className="w-full max-w-md bg-white rounded-3xl shadow-2xl p-8 border border-slate-100 text-center">
-          <div className="w-20 h-20 mx-auto mb-5 rounded-2xl bg-amber-50 border-2 border-amber-200 flex items-center justify-center shadow-lg">
+      <div className="min-h-screen bg-[#FFFDF7] flex items-center justify-center p-4">
+        <div className="w-full max-w-md bg-white rounded-3xl shadow-xl p-8 border border-slate-200 text-center">
+          <div className="w-20 h-20 mx-auto mb-5 rounded-2xl bg-amber-50 border-2 border-amber-200 flex items-center justify-center shadow-md">
             <Image
               src="/emblem.png"
               alt="School Emblem"
@@ -374,7 +377,7 @@ export default function AdminPage() {
               priority
             />
           </div>
-          <h2 className="text-2xl font-black text-slate-800 tracking-tight font-heading">
+          <h2 className="text-2xl font-black text-[#1E3A5F] tracking-tight font-heading">
             SINAPS Admin Portal
           </h2>
           <p className="text-sm text-slate-500 mt-1 mb-6 font-medium">
@@ -383,7 +386,7 @@ export default function AdminPage() {
 
           <form onSubmit={handleLogin} className="space-y-4">
             <div className="text-left">
-              <label className="block text-xs font-bold text-slate-600 mb-1.5 uppercase tracking-wider">
+              <label className="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wider">
                 Enter Master Security PIN
               </label>
               <input
@@ -391,27 +394,27 @@ export default function AdminPage() {
                 value={pinInput}
                 onChange={(e) => setPinInput(e.target.value)}
                 placeholder="••••••••••"
-                className="w-full px-4 py-3.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-center text-xl tracking-widest font-mono text-slate-800 bg-slate-50"
+                className="w-full px-4 py-3.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500 text-center text-xl tracking-widest font-mono text-slate-800 bg-slate-50"
                 autoFocus
               />
             </div>
 
             {pinError && (
-              <p className="text-xs text-rose-500 font-semibold bg-rose-50 p-2.5 rounded-lg border border-rose-200">
+              <p className="text-xs text-rose-600 font-semibold bg-rose-50 p-2.5 rounded-lg border border-rose-200">
                 {pinError}
               </p>
             )}
 
             <button
               type="submit"
-              className="w-full py-3.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold rounded-xl shadow-lg shadow-blue-500/25 transition-all transform active:scale-95 cursor-pointer"
+              className="w-full py-3.5 bg-gradient-to-r from-[#1E3A5F] to-blue-700 hover:from-blue-900 hover:to-blue-800 text-white font-bold rounded-xl shadow-lg shadow-blue-900/20 transition-all transform active:scale-95 cursor-pointer"
             >
               Unlock Dashboard 🔓
             </button>
           </form>
 
           <p className="text-[11px] text-slate-400 mt-6">
-            Default Security PIN: <code className="bg-slate-100 text-slate-600 px-2 py-0.5 rounded font-mono font-bold">sinaps2026</code>
+            Default Security PIN: <code className="bg-slate-100 text-slate-700 px-2 py-0.5 rounded font-mono font-bold">sinaps2026</code>
           </p>
         </div>
       </div>
@@ -423,42 +426,42 @@ export default function AdminPage() {
   // ==========================================
   if (isLoading || !content) {
     return (
-      <div className="min-h-screen bg-slate-900 flex flex-col items-center justify-center text-white">
+      <div className="min-h-screen bg-[#FFFDF7] flex flex-col items-center justify-center text-[#1E3A5F]">
         <div className="w-12 h-12 border-4 border-amber-400 border-t-transparent rounded-full animate-spin mb-4"></div>
-        <p className="font-bold text-slate-300">Loading SINAPS Website Data...</p>
+        <p className="font-bold text-slate-600">Loading SINAPS Website Data...</p>
       </div>
     );
   }
 
   // ==========================================
-  // 3. MASTER DUAL-PANE CMS DASHBOARD
+  // 3. MASTER DUAL-PANE CMS DASHBOARD (Light School Theme)
   // ==========================================
   return (
-    <div className="min-h-screen bg-slate-900 text-slate-800 flex flex-col h-screen overflow-hidden">
+    <div className="min-h-screen bg-slate-50 text-slate-800 flex flex-col h-screen overflow-hidden">
       
       {/* Toast Notification */}
       {toastMessage && (
-        <div className="fixed top-4 right-4 z-50 bg-slate-900 text-white px-5 py-3 rounded-2xl shadow-2xl border border-slate-700 flex items-center gap-3 animate-bounce">
+        <div className="fixed top-4 right-4 z-50 bg-[#1E3A5F] text-white px-5 py-3 rounded-2xl shadow-2xl border border-blue-400/30 flex items-center gap-3 animate-bounce">
           <span className="text-sm font-semibold">{toastMessage}</span>
         </div>
       )}
 
-      {/* TOP HEADER BAR */}
-      <header className="bg-slate-950 px-4 py-2.5 flex items-center justify-between border-b border-slate-800 flex-shrink-0 text-white">
+      {/* TOP HEADER BAR (School Navy Theme) */}
+      <header className="bg-[#1E3A5F] px-5 py-3 flex items-center justify-between border-b border-blue-900 flex-shrink-0 text-white shadow-md">
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl bg-blue-600 flex items-center justify-center shadow-md overflow-hidden">
-            <Image src="/emblem.png" alt="Logo" width={28} height={28} className="object-contain" />
+          <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center shadow-md overflow-hidden p-1">
+            <Image src="/emblem.png" alt="Logo" width={32} height={32} className="object-contain" />
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <span className="font-extrabold text-sm sm:text-base tracking-tight text-white">
-                SINAPS Visual CMS
+              <span className="font-black text-base tracking-tight text-white font-heading">
+                SINAPS VISUAL CMS
               </span>
-              <span className="text-[10px] bg-emerald-500/20 text-emerald-400 font-bold px-2 py-0.5 rounded-full border border-emerald-500/30 flex items-center gap-1">
+              <span className="text-[10px] bg-emerald-500/20 text-emerald-300 font-bold px-2 py-0.5 rounded-full border border-emerald-400/30 flex items-center gap-1">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping"></span> Live Synced
               </span>
             </div>
-            <p className="text-[11px] text-slate-400 hidden sm:block">
+            <p className="text-[11px] text-blue-200 hidden sm:block">
               St. Ignatius Nursery & Primary School • Budapadi, Erode
             </p>
           </div>
@@ -467,20 +470,12 @@ export default function AdminPage() {
         {/* Central Controls: Preview Page Selector & Device Switcher */}
         <div className="flex items-center gap-3">
           {/* Website Page Switcher for Live Inspector */}
-          <div className="hidden lg:flex items-center bg-slate-900 p-1 rounded-xl border border-slate-800 text-xs">
-            <span className="text-[10px] text-slate-400 font-bold px-2 uppercase">Preview Page:</span>
-            <button
-              onClick={() => { setPreviewPage("home"); locateSection("live-hero", "home"); }}
-              className={`px-2.5 py-1 rounded-lg font-bold transition-all ${
-                previewPage === "home" ? "bg-blue-600 text-white shadow" : "text-slate-400 hover:text-white"
-              }`}
-            >
-              🏠 Home
-            </button>
+          <div className="hidden lg:flex items-center bg-[#132842] p-1 rounded-xl border border-blue-800 text-xs">
+            <span className="text-[10px] text-blue-200 font-bold px-2 uppercase">Inspector View:</span>
             <button
               onClick={() => { setPreviewPage("fees"); locateSection("live-fees-cards", "fees"); }}
               className={`px-2.5 py-1 rounded-lg font-bold transition-all ${
-                previewPage === "fees" ? "bg-amber-500 text-slate-950 shadow" : "text-slate-400 hover:text-white"
+                previewPage === "fees" ? "bg-amber-400 text-slate-950 shadow" : "text-blue-200 hover:text-white"
               }`}
             >
               💰 Fees Overview
@@ -488,15 +483,23 @@ export default function AdminPage() {
             <button
               onClick={() => { setPreviewPage("school-fees"); locateSection("live-school-table", "school-fees"); }}
               className={`px-2.5 py-1 rounded-lg font-bold transition-all ${
-                previewPage === "school-fees" ? "bg-amber-400 text-slate-950 shadow" : "text-slate-400 hover:text-white"
+                previewPage === "school-fees" ? "bg-amber-400 text-slate-950 shadow" : "text-blue-200 hover:text-white"
               }`}
             >
-              📊 Class Tuition
+              📊 Class Tuition Table
+            </button>
+            <button
+              onClick={() => { setPreviewPage("home"); locateSection("live-hero", "home"); }}
+              className={`px-2.5 py-1 rounded-lg font-bold transition-all ${
+                previewPage === "home" ? "bg-blue-500 text-white shadow" : "text-blue-200 hover:text-white"
+              }`}
+            >
+              🏠 Home
             </button>
             <button
               onClick={() => { setPreviewPage("teachers"); locateSection("live-teachers", "teachers"); }}
               className={`px-2.5 py-1 rounded-lg font-bold transition-all ${
-                previewPage === "teachers" ? "bg-purple-600 text-white shadow" : "text-slate-400 hover:text-white"
+                previewPage === "teachers" ? "bg-purple-500 text-white shadow" : "text-blue-200 hover:text-white"
               }`}
             >
               👩‍🏫 Teachers
@@ -504,7 +507,7 @@ export default function AdminPage() {
             <button
               onClick={() => { setPreviewPage("students"); locateSection("live-students", "students"); }}
               className={`px-2.5 py-1 rounded-lg font-bold transition-all ${
-                previewPage === "students" ? "bg-emerald-600 text-white shadow" : "text-slate-400 hover:text-white"
+                previewPage === "students" ? "bg-emerald-500 text-white shadow" : "text-blue-200 hover:text-white"
               }`}
             >
               🎓 Students
@@ -512,11 +515,11 @@ export default function AdminPage() {
           </div>
 
           {/* Device Mockup Toggle */}
-          <div className="flex bg-slate-900 p-0.5 rounded-lg border border-slate-800 text-xs">
+          <div className="flex bg-[#132842] p-0.5 rounded-lg border border-blue-800 text-xs">
             <button
               onClick={() => setDeviceMode("desktop")}
               className={`px-2.5 py-1 rounded font-bold transition-all ${
-                deviceMode === "desktop" ? "bg-blue-600 text-white" : "text-slate-400 hover:text-white"
+                deviceMode === "desktop" ? "bg-white text-[#1E3A5F] shadow" : "text-blue-200 hover:text-white"
               }`}
               title="Desktop Screen"
             >
@@ -525,7 +528,7 @@ export default function AdminPage() {
             <button
               onClick={() => setDeviceMode("tablet")}
               className={`px-2.5 py-1 rounded font-bold transition-all ${
-                deviceMode === "tablet" ? "bg-blue-600 text-white" : "text-slate-400 hover:text-white"
+                deviceMode === "tablet" ? "bg-white text-[#1E3A5F] shadow" : "text-blue-200 hover:text-white"
               }`}
               title="Tablet Screen"
             >
@@ -534,7 +537,7 @@ export default function AdminPage() {
             <button
               onClick={() => setDeviceMode("mobile")}
               className={`px-2.5 py-1 rounded font-bold transition-all ${
-                deviceMode === "mobile" ? "bg-blue-600 text-white" : "text-slate-400 hover:text-white"
+                deviceMode === "mobile" ? "bg-white text-[#1E3A5F] shadow" : "text-blue-200 hover:text-white"
               }`}
               title="Mobile Screen"
             >
@@ -546,20 +549,20 @@ export default function AdminPage() {
           <div className="flex items-center gap-2">
             <button
               onClick={handleSaveDraft}
-              className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold rounded-lg border border-slate-700 flex items-center gap-1.5 transition-all cursor-pointer"
+              className="px-3 py-1.5 bg-white/10 hover:bg-white/20 text-white text-xs font-bold rounded-lg border border-white/20 flex items-center gap-1.5 transition-all cursor-pointer"
             >
               💾 Save Draft
             </button>
             <button
               onClick={handlePublishLive}
               disabled={isPublishing}
-              className="px-3.5 py-1.5 bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-600 hover:to-green-700 text-white text-xs font-extrabold rounded-lg shadow-md shadow-emerald-500/20 flex items-center gap-1.5 transition-all transform active:scale-95 cursor-pointer disabled:opacity-50"
+              className="px-3.5 py-1.5 bg-gradient-to-r from-emerald-400 to-green-500 hover:from-emerald-500 hover:to-green-600 text-slate-950 text-xs font-black rounded-lg shadow-md flex items-center gap-1.5 transition-all transform active:scale-95 cursor-pointer disabled:opacity-50"
             >
               {isPublishing ? "⏳ Publishing..." : "🚀 Publish Live"}
             </button>
             <button
               onClick={handleLogout}
-              className="p-1.5 text-slate-400 hover:text-rose-400 rounded-lg hover:bg-slate-800 transition-all cursor-pointer"
+              className="p-1.5 text-blue-200 hover:text-rose-300 rounded-lg hover:bg-white/10 transition-all cursor-pointer"
               title="Sign Out"
             >
               <i className="ti ti-logout text-base"></i>
@@ -568,12 +571,12 @@ export default function AdminPage() {
         </div>
       </header>
 
-      {/* NAVIGATION TABS (Directly Mimicking Website Sections) */}
-      <div className="bg-slate-900 px-4 py-2 flex items-center gap-2 border-b border-slate-800 overflow-x-auto flex-shrink-0 text-xs">
+      {/* NAVIGATION TABS (Light School Theme) */}
+      <div className="bg-white px-4 py-2.5 flex items-center gap-2 border-b border-slate-200 overflow-x-auto flex-shrink-0 text-xs shadow-xs">
         <button
-          onClick={() => { setActiveTab("fees"); setPreviewPage("fees"); locateSection("live-fees-cards", "fees"); }}
-          className={`px-3 py-1.5 rounded-lg font-bold flex items-center gap-1.5 whitespace-nowrap transition-all ${
-            activeTab === "fees" ? "bg-amber-400 text-slate-950 shadow" : "bg-slate-800 text-slate-300 hover:bg-slate-700"
+          onClick={() => { setActiveTab("fees"); setPreviewPage("school-fees"); locateSection("live-school-table", "school-fees"); }}
+          className={`px-3.5 py-2 rounded-xl font-bold flex items-center gap-1.5 whitespace-nowrap transition-all ${
+            activeTab === "fees" ? "bg-[#1E3A5F] text-white shadow-md" : "bg-slate-100 text-slate-700 hover:bg-slate-200"
           }`}
         >
           💰 Fees Structure (/fees & /fees/school)
@@ -581,8 +584,8 @@ export default function AdminPage() {
 
         <button
           onClick={() => { setActiveTab("teachers"); setPreviewPage("teachers"); locateSection("live-teachers", "teachers"); }}
-          className={`px-3 py-1.5 rounded-lg font-bold flex items-center gap-1.5 whitespace-nowrap transition-all ${
-            activeTab === "teachers" ? "bg-purple-600 text-white shadow" : "bg-slate-800 text-slate-300 hover:bg-slate-700"
+          className={`px-3.5 py-2 rounded-xl font-bold flex items-center gap-1.5 whitespace-nowrap transition-all ${
+            activeTab === "teachers" ? "bg-purple-700 text-white shadow-md" : "bg-slate-100 text-slate-700 hover:bg-slate-200"
           }`}
         >
           👩‍🏫 Staff & Teachers (/teachers)
@@ -590,8 +593,8 @@ export default function AdminPage() {
 
         <button
           onClick={() => { setActiveTab("photos"); setPreviewPage("home"); locateSection("live-marquee", "home"); }}
-          className={`px-3 py-1.5 rounded-lg font-bold flex items-center gap-1.5 whitespace-nowrap transition-all ${
-            activeTab === "photos" ? "bg-blue-600 text-white shadow" : "bg-slate-800 text-slate-300 hover:bg-slate-700"
+          className={`px-3.5 py-2 rounded-xl font-bold flex items-center gap-1.5 whitespace-nowrap transition-all ${
+            activeTab === "photos" ? "bg-blue-600 text-white shadow-md" : "bg-slate-100 text-slate-700 hover:bg-slate-200"
           }`}
         >
           📸 Photos & Marquee
@@ -599,8 +602,8 @@ export default function AdminPage() {
 
         <button
           onClick={() => { setActiveTab("home"); setPreviewPage("home"); locateSection("live-hero", "home"); }}
-          className={`px-3 py-1.5 rounded-lg font-bold flex items-center gap-1.5 whitespace-nowrap transition-all ${
-            activeTab === "home" ? "bg-blue-600 text-white shadow" : "bg-slate-800 text-slate-300 hover:bg-slate-700"
+          className={`px-3.5 py-2 rounded-xl font-bold flex items-center gap-1.5 whitespace-nowrap transition-all ${
+            activeTab === "home" ? "bg-blue-600 text-white shadow-md" : "bg-slate-100 text-slate-700 hover:bg-slate-200"
           }`}
         >
           🏠 Home & Top Bar
@@ -608,8 +611,8 @@ export default function AdminPage() {
 
         <button
           onClick={() => { setActiveTab("students"); setPreviewPage("students"); locateSection("live-students", "students"); }}
-          className={`px-3 py-1.5 rounded-lg font-bold flex items-center gap-1.5 whitespace-nowrap transition-all ${
-            activeTab === "students" ? "bg-emerald-600 text-white shadow" : "bg-slate-800 text-slate-300 hover:bg-slate-700"
+          className={`px-3.5 py-2 rounded-xl font-bold flex items-center gap-1.5 whitespace-nowrap transition-all ${
+            activeTab === "students" ? "bg-emerald-600 text-white shadow-md" : "bg-slate-100 text-slate-700 hover:bg-slate-200"
           }`}
         >
           🎓 Students & Stats (/students)
@@ -617,8 +620,8 @@ export default function AdminPage() {
 
         <button
           onClick={() => { setActiveTab("popup"); setPreviewPage("home"); locateSection("live-popup", "home"); }}
-          className={`px-3 py-1.5 rounded-lg font-bold flex items-center gap-1.5 whitespace-nowrap transition-all ${
-            activeTab === "popup" ? "bg-rose-600 text-white shadow" : "bg-slate-800 text-slate-300 hover:bg-slate-700"
+          className={`px-3.5 py-2 rounded-xl font-bold flex items-center gap-1.5 whitespace-nowrap transition-all ${
+            activeTab === "popup" ? "bg-rose-600 text-white shadow-md" : "bg-slate-100 text-slate-700 hover:bg-slate-200"
           }`}
         >
           🚨 Urgent Pop-up Alert
@@ -626,8 +629,8 @@ export default function AdminPage() {
 
         <button
           onClick={() => { setActiveTab("contact"); setPreviewPage("home"); locateSection("live-contact", "home"); }}
-          className={`px-3 py-1.5 rounded-lg font-bold flex items-center gap-1.5 whitespace-nowrap transition-all ${
-            activeTab === "contact" ? "bg-slate-700 text-white shadow" : "bg-slate-800 text-slate-300 hover:bg-slate-700"
+          className={`px-3.5 py-2 rounded-xl font-bold flex items-center gap-1.5 whitespace-nowrap transition-all ${
+            activeTab === "contact" ? "bg-slate-700 text-white shadow-md" : "bg-slate-100 text-slate-700 hover:bg-slate-200"
           }`}
         >
           📍 Campus Info & Contact
@@ -637,185 +640,178 @@ export default function AdminPage() {
       {/* DUAL PANE WORKSPACE: LEFT = EDITOR CONTROLS, RIGHT = LIVE WEBSITE MIMIC INSPECTOR */}
       <div className="flex-1 flex overflow-hidden">
         
-        {/* LEFT COLUMN: EDITING FORM (45% Width) */}
-        <div className="w-full lg:w-[48%] xl:w-[45%] bg-slate-900 border-r border-slate-800 overflow-y-auto custom-scrollbar p-4 lg:p-6 text-slate-100">
+        {/* LEFT COLUMN: EDITING FORM (Light Theme, Crisp White Cards) */}
+        <div className="w-full lg:w-[48%] xl:w-[45%] bg-slate-50 border-r border-slate-200 overflow-y-auto custom-scrollbar p-4 lg:p-6 text-slate-800">
           
           {/* ==================================================== */}
-          {/* TAB 1: FEES & BUS STRUCTURE (ACCURATE & FULLY EDITABLE) */}
+          {/* TAB 1: FEES & BUS STRUCTURE (RESOLVED NO MISMATCH) */}
           {/* ==================================================== */}
           {activeTab === "fees" && (
             <div className="space-y-6">
-              <div>
+              <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
                 <div className="flex items-center justify-between">
-                  <h3 className="text-lg font-extrabold text-white flex items-center gap-2">
-                    <span>💰</span> School Fees & Slabs Manager
+                  <h3 className="text-lg font-black text-[#1E3A5F] flex items-center gap-2">
+                    <span>💰</span> School Fees Manager
                   </h3>
                   <button
-                    onClick={() => locateSection("live-fees-cards", "fees")}
-                    className="text-xs bg-amber-400 hover:bg-amber-500 text-slate-950 font-bold px-2.5 py-1 rounded-md flex items-center gap-1"
+                    onClick={() => locateSection("live-school-table", "school-fees")}
+                    className="text-xs bg-amber-400 hover:bg-amber-500 text-slate-950 font-bold px-3 py-1.5 rounded-lg flex items-center gap-1 shadow-sm"
                   >
-                    📍 Locate on Site
+                    📍 View on Site
                   </button>
                 </div>
-                <p className="text-xs text-slate-400 mt-1">
-                  Changes made here instantly update both the <strong>/fees</strong> overview cards and the detailed <strong>/fees/school</strong> class-wise tuition table!
+                <p className="text-xs text-slate-500 mt-1">
+                  Tuition fees are class-specific (LKG to 5th Std). Books, Bus, and Activities are additional facilities.
                 </p>
               </div>
 
-              {/* PART A: DETAILED CLASS-BY-CLASS TUITION (Matches /fees/school) */}
-              <div className="bg-slate-800/80 rounded-2xl p-4 border border-slate-700 space-y-4">
-                <div className="flex items-center justify-between border-b border-slate-700 pb-2">
+              {/* SECTION 1: CLASS-BY-CLASS TUITION (Matches /fees/school) */}
+              <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm space-y-4">
+                <div className="flex items-center justify-between border-b border-slate-100 pb-3">
                   <div>
-                    <h4 className="font-extrabold text-sm text-amber-300 flex items-center gap-1.5">
+                    <h4 className="font-extrabold text-sm text-[#1E3A5F] flex items-center gap-1.5">
                       📊 Class-wise Tuition Fees Table
                     </h4>
-                    <p className="text-[11px] text-slate-400">
-                      As seen on: <code className="text-amber-400">sinaps.in/fees/school</code>
+                    <p className="text-[11px] text-slate-500">
+                      Live on: <code className="text-blue-600 font-bold">sinaps.in/fees/school</code>
                     </p>
                   </div>
                   <button
                     onClick={handleAddClassFee}
-                    className="text-xs bg-blue-600 hover:bg-blue-500 text-white font-bold px-2.5 py-1 rounded-md flex items-center gap-1"
+                    className="text-xs bg-blue-600 hover:bg-blue-700 text-white font-bold px-3 py-1.5 rounded-lg flex items-center gap-1 shadow-sm"
                   >
                     ➕ Add Class
                   </button>
                 </div>
 
                 <div className="space-y-2">
-                  <div className="grid grid-cols-12 gap-2 text-[11px] font-bold text-slate-400 uppercase tracking-wider px-2">
+                  <div className="grid grid-cols-12 gap-2 text-[11px] font-bold text-slate-500 uppercase tracking-wider px-2">
                     <span className="col-span-5">Class / Standard</span>
-                    <span className="col-span-5">Fees (Rs.)</span>
-                    <span className="col-span-2 text-right">Action</span>
+                    <span className="col-span-5">2026-27 Fees (Rs.)</span>
+                    <span className="col-span-2 text-right">Delete</span>
                   </div>
 
                   {content.fees?.classList?.map((item, idx) => (
                     <div
                       key={idx}
-                      className="grid grid-cols-12 gap-2 items-center bg-slate-900/60 p-2 rounded-xl border border-slate-700 hover:border-slate-600 transition-all"
+                      className="grid grid-cols-12 gap-2 items-center bg-slate-50 p-2 rounded-xl border border-slate-200 hover:border-blue-400 transition-all"
                     >
                       <input
                         type="text"
                         value={item.standard}
                         onChange={(e) => handleClassFeeChange(idx, "standard", e.target.value)}
                         placeholder="e.g. LKG"
-                        className="col-span-5 bg-slate-800 text-white px-2.5 py-1.5 rounded-lg border border-slate-600 text-xs font-semibold focus:outline-none focus:border-amber-400"
+                        className="col-span-5 bg-white text-slate-900 px-3 py-1.5 rounded-lg border border-slate-300 text-xs font-bold focus:outline-none focus:ring-2 focus:ring-blue-500"
                       />
                       <input
                         type="text"
                         value={item.amount}
                         onChange={(e) => handleClassFeeChange(idx, "amount", e.target.value)}
                         placeholder="e.g. 19,800"
-                        className="col-span-5 bg-slate-800 text-amber-300 font-bold px-2.5 py-1.5 rounded-lg border border-slate-600 text-xs focus:outline-none focus:border-amber-400 text-right"
+                        className="col-span-5 bg-white text-[#1E3A5F] font-black px-3 py-1.5 rounded-lg border border-slate-300 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500 text-right"
                       />
                       <div className="col-span-2 text-right">
                         <button
                           onClick={() => handleDeleteClassFee(idx)}
-                          className="text-slate-400 hover:text-rose-400 p-1.5 rounded-md hover:bg-slate-800 transition-all"
+                          className="text-slate-400 hover:text-rose-600 p-1.5 rounded-md hover:bg-rose-50 transition-all cursor-pointer"
                           title="Remove Class"
                         >
-                          <i className="ti ti-trash text-sm"></i>
+                          <i className="ti ti-trash text-base"></i>
                         </button>
                       </div>
                     </div>
                   ))}
                 </div>
+
+                <div className="bg-blue-50/70 p-3 rounded-xl border border-blue-200/80 text-[11px] text-blue-800 flex items-center gap-2">
+                  <i className="ti ti-info-circle text-base text-blue-600"></i>
+                  <span>The Overview Fees page automatically shows this tuition range: <strong>₹{lowestFee} – ₹{highestFee} / year</strong></span>
+                </div>
               </div>
 
-              {/* PART B: 4 OVERVIEW FEE CARDS (Matches /fees) */}
-              <div className="bg-slate-800/80 rounded-2xl p-4 border border-slate-700 space-y-4">
-                <h4 className="font-extrabold text-sm text-blue-300 flex items-center gap-1.5 border-b border-slate-700 pb-2">
-                  🎓 4 Overview Fee Cards (As seen on /fees)
-                </h4>
+              {/* SECTION 2: ADDITIONAL FACILITY FEES (Books, Bus & Activities) */}
+              <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm space-y-4">
+                <div className="border-b border-slate-100 pb-3">
+                  <h4 className="font-extrabold text-sm text-[#1E3A5F] flex items-center gap-1.5">
+                    📚 Additional School Facility Charges (Books, Bus & Activities)
+                  </h4>
+                  <p className="text-[11px] text-slate-500">
+                    Live on: <code className="text-blue-600 font-bold">sinaps.in/fees</code>
+                  </p>
+                </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {/* Card 1: School Tuition */}
-                  <div className="bg-slate-900/70 p-3 rounded-xl border border-blue-900/50 space-y-2">
-                    <span className="text-xs font-bold text-blue-400">1. School Tuition Fees</span>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  {/* 1. Book Fees */}
+                  <div className="bg-amber-50/50 p-3.5 rounded-xl border border-amber-200 space-y-2">
+                    <span className="text-xs font-black text-amber-800 flex items-center gap-1">
+                      📚 Book & Stationery
+                    </span>
                     <div>
-                      <label className="text-[10px] text-slate-400 block font-semibold">Amount</label>
+                      <label className="text-[10px] text-slate-600 block font-bold mb-0.5">Amount</label>
                       <input
                         type="text"
-                        value={content.fees?.overview?.tuition?.amount || ""}
-                        onChange={(e) => handleOverviewFeeChange("tuition", "amount", e.target.value)}
-                        className="w-full bg-slate-800 text-white text-xs px-2 py-1 rounded border border-slate-700"
+                        value={content.fees?.additional?.book?.amount || ""}
+                        onChange={(e) => handleAdditionalFeeChange("book", "amount", e.target.value)}
+                        className="w-full bg-white text-slate-900 font-bold text-xs px-2.5 py-1.5 rounded-lg border border-slate-300 shadow-xs"
                       />
                     </div>
                     <div>
-                      <label className="text-[10px] text-slate-400 block font-semibold">Period</label>
+                      <label className="text-[10px] text-slate-600 block font-bold mb-0.5">Period</label>
                       <input
                         type="text"
-                        value={content.fees?.overview?.tuition?.period || ""}
-                        onChange={(e) => handleOverviewFeeChange("tuition", "period", e.target.value)}
-                        className="w-full bg-slate-800 text-white text-xs px-2 py-1 rounded border border-slate-700"
+                        value={content.fees?.additional?.book?.period || ""}
+                        onChange={(e) => handleAdditionalFeeChange("book", "period", e.target.value)}
+                        className="w-full bg-white text-slate-900 text-xs px-2.5 py-1.5 rounded-lg border border-slate-300 shadow-xs"
                       />
                     </div>
                   </div>
 
-                  {/* Card 2: Book Fees */}
-                  <div className="bg-slate-900/70 p-3 rounded-xl border border-amber-900/50 space-y-2">
-                    <span className="text-xs font-bold text-amber-400">2. Book & Stationery</span>
+                  {/* 2. Bus Transport */}
+                  <div className="bg-emerald-50/50 p-3.5 rounded-xl border border-emerald-200 space-y-2">
+                    <span className="text-xs font-black text-emerald-800 flex items-center gap-1">
+                      🚌 Bus Transport
+                    </span>
                     <div>
-                      <label className="text-[10px] text-slate-400 block font-semibold">Amount</label>
+                      <label className="text-[10px] text-slate-600 block font-bold mb-0.5">Amount</label>
                       <input
                         type="text"
-                        value={content.fees?.overview?.book?.amount || ""}
-                        onChange={(e) => handleOverviewFeeChange("book", "amount", e.target.value)}
-                        className="w-full bg-slate-800 text-white text-xs px-2 py-1 rounded border border-slate-700"
+                        value={content.fees?.additional?.bus?.amount || ""}
+                        onChange={(e) => handleAdditionalFeeChange("bus", "amount", e.target.value)}
+                        className="w-full bg-white text-slate-900 font-bold text-xs px-2.5 py-1.5 rounded-lg border border-slate-300 shadow-xs"
                       />
                     </div>
                     <div>
-                      <label className="text-[10px] text-slate-400 block font-semibold">Period</label>
+                      <label className="text-[10px] text-slate-600 block font-bold mb-0.5">Period</label>
                       <input
                         type="text"
-                        value={content.fees?.overview?.book?.period || ""}
-                        onChange={(e) => handleOverviewFeeChange("book", "period", e.target.value)}
-                        className="w-full bg-slate-800 text-white text-xs px-2 py-1 rounded border border-slate-700"
-                      />
-                    </div>
-                  </div>
-
-                  {/* Card 3: Bus Transport */}
-                  <div className="bg-slate-900/70 p-3 rounded-xl border border-emerald-900/50 space-y-2">
-                    <span className="text-xs font-bold text-emerald-400">3. Bus Transport</span>
-                    <div>
-                      <label className="text-[10px] text-slate-400 block font-semibold">Amount</label>
-                      <input
-                        type="text"
-                        value={content.fees?.overview?.bus?.amount || ""}
-                        onChange={(e) => handleOverviewFeeChange("bus", "amount", e.target.value)}
-                        className="w-full bg-slate-800 text-white text-xs px-2 py-1 rounded border border-slate-700"
-                      />
-                    </div>
-                    <div>
-                      <label className="text-[10px] text-slate-400 block font-semibold">Period</label>
-                      <input
-                        type="text"
-                        value={content.fees?.overview?.bus?.period || ""}
-                        onChange={(e) => handleOverviewFeeChange("bus", "period", e.target.value)}
-                        className="w-full bg-slate-800 text-white text-xs px-2 py-1 rounded border border-slate-700"
+                        value={content.fees?.additional?.bus?.period || ""}
+                        onChange={(e) => handleAdditionalFeeChange("bus", "period", e.target.value)}
+                        className="w-full bg-white text-slate-900 text-xs px-2.5 py-1.5 rounded-lg border border-slate-300 shadow-xs"
                       />
                     </div>
                   </div>
 
-                  {/* Card 4: Extracurricular Activities */}
-                  <div className="bg-slate-900/70 p-3 rounded-xl border border-pink-900/50 space-y-2">
-                    <span className="text-xs font-bold text-pink-400">4. Activities Fees</span>
+                  {/* 3. Activity Fees */}
+                  <div className="bg-pink-50/50 p-3.5 rounded-xl border border-pink-200 space-y-2">
+                    <span className="text-xs font-black text-pink-800 flex items-center gap-1">
+                      🎨 Extracurricular
+                    </span>
                     <div>
-                      <label className="text-[10px] text-slate-400 block font-semibold">Amount</label>
+                      <label className="text-[10px] text-slate-600 block font-bold mb-0.5">Amount</label>
                       <input
                         type="text"
-                        value={content.fees?.overview?.activity?.amount || ""}
-                        onChange={(e) => handleOverviewFeeChange("activity", "amount", e.target.value)}
-                        className="w-full bg-slate-800 text-white text-xs px-2 py-1 rounded border border-slate-700"
+                        value={content.fees?.additional?.activity?.amount || ""}
+                        onChange={(e) => handleAdditionalFeeChange("activity", "amount", e.target.value)}
+                        className="w-full bg-white text-slate-900 font-bold text-xs px-2.5 py-1.5 rounded-lg border border-slate-300 shadow-xs"
                       />
                     </div>
                     <div>
-                      <label className="text-[10px] text-slate-400 block font-semibold">Period</label>
+                      <label className="text-[10px] text-slate-600 block font-bold mb-0.5">Period</label>
                       <input
                         type="text"
-                        value={content.fees?.overview?.activity?.period || ""}
-                        onChange={(e) => handleOverviewFeeChange("activity", "period", e.target.value)}
-                        className="w-full bg-slate-800 text-white text-xs px-2 py-1 rounded border border-slate-700"
+                        value={content.fees?.additional?.activity?.period || ""}
+                        onChange={(e) => handleAdditionalFeeChange("activity", "period", e.target.value)}
+                        className="w-full bg-white text-slate-900 text-xs px-2.5 py-1.5 rounded-lg border border-slate-300 shadow-xs"
                       />
                     </div>
                   </div>
@@ -823,17 +819,17 @@ export default function AdminPage() {
 
                 {/* Footer Note */}
                 <div className="pt-2">
-                  <label className="text-xs font-bold text-slate-300 block mb-1">
+                  <label className="text-xs font-bold text-slate-700 block mb-1">
                     Disclaimer Note on Fees Page:
                   </label>
                   <textarea
                     rows={2}
-                    value={content.fees?.overview?.note || ""}
+                    value={content.fees?.additional?.note || ""}
                     onChange={(e) => {
-                      const updatedOverview = { ...content.fees.overview, note: e.target.value };
-                      setContent({ ...content, fees: { ...content.fees, overview: updatedOverview } });
+                      const additional = { ...content.fees.additional, note: e.target.value };
+                      setContent({ ...content, fees: { ...content.fees, additional } });
                     }}
-                    className="w-full bg-slate-900 text-slate-200 text-xs p-2 rounded-xl border border-slate-700 focus:outline-none focus:border-amber-400"
+                    className="w-full bg-white text-slate-800 text-xs p-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
               </div>
@@ -845,27 +841,27 @@ export default function AdminPage() {
           {/* ==================================================== */}
           {activeTab === "teachers" && (
             <div className="space-y-6">
-              <div className="flex items-center justify-between">
+              <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
                 <div>
-                  <h3 className="text-lg font-extrabold text-white flex items-center gap-2">
+                  <h3 className="text-lg font-black text-[#1E3A5F] flex items-center gap-2">
                     <span>👩‍🏫</span> Staff & Teachers Directory
                   </h3>
-                  <p className="text-xs text-slate-400 mt-0.5">
+                  <p className="text-xs text-slate-500 mt-0.5">
                     Click any field to edit name, qualification, or role directly. Reorder with ↑ / ↓ buttons!
                   </p>
                 </div>
                 <div className="flex items-center gap-2">
                   <button
                     onClick={handleAddTeacher}
-                    className="text-xs bg-purple-600 hover:bg-purple-500 text-white font-bold px-3 py-1.5 rounded-lg flex items-center gap-1 shadow cursor-pointer"
+                    className="text-xs bg-purple-700 hover:bg-purple-800 text-white font-bold px-3 py-2 rounded-xl flex items-center gap-1 shadow-sm cursor-pointer"
                   >
                     ➕ Add Teacher
                   </button>
                   <button
                     onClick={() => locateSection("live-teachers", "teachers")}
-                    className="text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold px-2.5 py-1.5 rounded-lg"
+                    className="text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold px-3 py-2 rounded-xl"
                   >
-                    📍 Locate
+                    📍 View on Site
                   </button>
                 </div>
               </div>
@@ -874,11 +870,11 @@ export default function AdminPage() {
                 {content.teachers?.map((t: TeacherItem, idx: number) => (
                   <div
                     key={idx}
-                    className="bg-slate-800/80 p-3.5 rounded-2xl border border-slate-700 hover:border-purple-500/50 transition-all space-y-2.5"
+                    className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm hover:border-purple-300 transition-all space-y-2.5"
                   >
-                    <div className="flex items-center justify-between text-xs border-b border-slate-700/60 pb-2">
-                      <span className="font-extrabold text-purple-400 flex items-center gap-1.5">
-                        <span className="w-5 h-5 rounded-full bg-purple-500/20 flex items-center justify-center text-[10px]">
+                    <div className="flex items-center justify-between text-xs border-b border-slate-100 pb-2">
+                      <span className="font-extrabold text-purple-700 flex items-center gap-1.5">
+                        <span className="w-5 h-5 rounded-full bg-purple-100 flex items-center justify-center text-[10px] text-purple-800">
                           {idx + 1}
                         </span>
                         Teacher #{idx + 1}
@@ -887,7 +883,7 @@ export default function AdminPage() {
                         <button
                           onClick={() => handleMoveTeacher(idx, "up")}
                           disabled={idx === 0}
-                          className="p-1 rounded bg-slate-700 hover:bg-slate-600 text-slate-300 disabled:opacity-30"
+                          className="px-2 py-1 rounded bg-slate-100 hover:bg-slate-200 text-slate-700 disabled:opacity-30 text-xs font-bold"
                           title="Move Up"
                         >
                           ↑
@@ -895,14 +891,14 @@ export default function AdminPage() {
                         <button
                           onClick={() => handleMoveTeacher(idx, "down")}
                           disabled={idx === content.teachers.length - 1}
-                          className="p-1 rounded bg-slate-700 hover:bg-slate-600 text-slate-300 disabled:opacity-30"
+                          className="px-2 py-1 rounded bg-slate-100 hover:bg-slate-200 text-slate-700 disabled:opacity-30 text-xs font-bold"
                           title="Move Down"
                         >
                           ↓
                         </button>
                         <button
                           onClick={() => handleDeleteTeacher(idx)}
-                          className="p-1 text-slate-400 hover:text-rose-400 hover:bg-slate-700 rounded ml-1"
+                          className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-md ml-1"
                           title="Delete Teacher"
                         >
                           <i className="ti ti-trash"></i>
@@ -910,37 +906,37 @@ export default function AdminPage() {
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
                       <div>
-                        <label className="text-[10px] text-slate-400 block font-semibold mb-0.5">Teacher Name</label>
+                        <label className="text-[10px] text-slate-500 block font-bold mb-1">Teacher Name</label>
                         <input
                           type="text"
                           value={t.name}
                           onChange={(e) => handleTeacherChange(idx, "name", e.target.value)}
                           placeholder="e.g. Mrs. Anitha R."
-                          className="w-full bg-slate-900 text-white font-bold text-xs px-2.5 py-1.5 rounded-lg border border-slate-600 focus:outline-none focus:border-purple-400"
+                          className="w-full bg-white text-slate-900 font-bold text-xs px-3 py-1.5 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-purple-500"
                         />
                       </div>
 
                       <div>
-                        <label className="text-[10px] text-slate-400 block font-semibold mb-0.5">Qualification</label>
+                        <label className="text-[10px] text-slate-500 block font-bold mb-1">Qualification</label>
                         <input
                           type="text"
                           value={t.qualification}
                           onChange={(e) => handleTeacherChange(idx, "qualification", e.target.value)}
                           placeholder="e.g. M.A., B.Ed."
-                          className="w-full bg-slate-900 text-blue-300 font-semibold text-xs px-2.5 py-1.5 rounded-lg border border-slate-600 focus:outline-none focus:border-purple-400"
+                          className="w-full bg-white text-blue-700 font-semibold text-xs px-3 py-1.5 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-purple-500"
                         />
                       </div>
 
                       <div>
-                        <label className="text-[10px] text-slate-400 block font-semibold mb-0.5">Role / Subject</label>
+                        <label className="text-[10px] text-slate-500 block font-bold mb-1">Role / Subject</label>
                         <input
                           type="text"
                           value={t.role || ""}
                           onChange={(e) => handleTeacherChange(idx, "role", e.target.value)}
                           placeholder="e.g. Primary Head"
-                          className="w-full bg-slate-900 text-amber-300 font-semibold text-xs px-2.5 py-1.5 rounded-lg border border-slate-600 focus:outline-none focus:border-purple-400"
+                          className="w-full bg-white text-amber-700 font-semibold text-xs px-3 py-1.5 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-purple-500"
                         />
                       </div>
                     </div>
@@ -955,33 +951,33 @@ export default function AdminPage() {
           {/* ==================================================== */}
           {activeTab === "photos" && (
             <div className="space-y-6">
-              <div className="flex items-center justify-between">
+              <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
                 <div>
-                  <h3 className="text-lg font-extrabold text-white flex items-center gap-2">
+                  <h3 className="text-lg font-black text-[#1E3A5F] flex items-center gap-2">
                     <span>📸</span> School Photo & Marquee Manager
                   </h3>
-                  <p className="text-xs text-slate-400 mt-0.5">
+                  <p className="text-xs text-slate-500 mt-0.5">
                     Pick Hero Card photo or upload / reorder photos for the scrolling strip.
                   </p>
                 </div>
                 <button
                   onClick={() => locateSection("live-marquee", "home")}
-                  className="text-xs bg-blue-600 hover:bg-blue-500 text-white font-bold px-2.5 py-1 rounded-md"
+                  className="text-xs bg-blue-600 hover:bg-blue-700 text-white font-bold px-3 py-1.5 rounded-lg"
                 >
-                  📍 Locate on Site
+                  📍 View on Site
                 </button>
               </div>
 
               {/* Upload Box */}
-              <div className="bg-slate-800/80 p-4 rounded-2xl border border-dashed border-slate-700 text-center space-y-3">
-                <div className="w-10 h-10 rounded-full bg-blue-500/20 text-blue-400 mx-auto flex items-center justify-center text-xl">
+              <div className="bg-white p-6 rounded-2xl border-2 border-dashed border-blue-200 text-center space-y-3 shadow-sm">
+                <div className="w-12 h-12 rounded-full bg-blue-50 text-blue-600 mx-auto flex items-center justify-center text-2xl">
                   📁
                 </div>
                 <div>
-                  <h4 className="font-bold text-sm text-white">Upload New Campus / Activity Photo</h4>
-                  <p className="text-[11px] text-slate-400">Large raw camera photos are automatically optimized.</p>
+                  <h4 className="font-bold text-sm text-slate-800">Upload New Campus / Activity Photo</h4>
+                  <p className="text-xs text-slate-500">Camera photos are automatically compressed for fast loading.</p>
                 </div>
-                <label className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white font-bold px-4 py-2 rounded-xl text-xs cursor-pointer shadow">
+                <label className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-bold px-5 py-2.5 rounded-xl text-xs cursor-pointer shadow-md">
                   <span>{isUploading ? "Uploading..." : "Browse Photo File"}</span>
                   <input
                     type="file"
@@ -995,35 +991,35 @@ export default function AdminPage() {
 
               {/* Current Photos Grid */}
               <div className="space-y-2">
-                <h4 className="font-extrabold text-xs uppercase tracking-wider text-slate-400">
+                <h4 className="font-extrabold text-xs uppercase tracking-wider text-slate-500">
                   Marquee Photos ({content.marquee.length})
                 </h4>
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                   {content.marquee.map((src, idx) => (
                     <div
                       key={idx}
-                      className="bg-slate-800 rounded-xl overflow-hidden border border-slate-700 relative group"
+                      className="bg-white rounded-xl overflow-hidden border border-slate-200 shadow-xs relative group"
                     >
-                      <div className="h-28 bg-slate-950 relative">
+                      <div className="h-28 bg-slate-100 relative">
                         <img
                           src={src}
                           alt={`Marquee ${idx}`}
                           className="w-full h-full object-cover"
                         />
                         {content.hero.heroImage === src && (
-                          <span className="absolute top-1 left-1 bg-amber-500 text-slate-950 font-black text-[9px] px-1.5 py-0.5 rounded">
+                          <span className="absolute top-1 left-1 bg-amber-400 text-slate-950 font-black text-[9px] px-1.5 py-0.5 rounded shadow">
                             ⭐ HERO
                           </span>
                         )}
                       </div>
-                      <div className="p-2 flex items-center justify-between text-[11px] bg-slate-850">
+                      <div className="p-2 flex items-center justify-between text-[11px] bg-slate-50 border-t border-slate-100">
                         <button
                           onClick={() => {
                             setContent({ ...content, hero: { ...content.hero, heroImage: src } });
                             showToast("Set as Hero Card Photo!");
                             locateSection("live-hero", "home");
                           }}
-                          className="text-blue-400 hover:text-blue-300 font-bold"
+                          className="text-blue-600 hover:text-blue-800 font-bold cursor-pointer"
                         >
                           Make Hero
                         </button>
@@ -1033,7 +1029,7 @@ export default function AdminPage() {
                             setContent({ ...content, marquee: updated });
                             showToast("Photo removed from strip");
                           }}
-                          className="text-slate-400 hover:text-rose-400"
+                          className="text-slate-400 hover:text-rose-600 cursor-pointer"
                         >
                           <i className="ti ti-trash"></i>
                         </button>
@@ -1050,25 +1046,25 @@ export default function AdminPage() {
           {/* ==================================================== */}
           {activeTab === "home" && (
             <div className="space-y-6">
-              <div className="flex items-center justify-between">
-                <h3 className="text-lg font-extrabold text-white flex items-center gap-2">
+              <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
+                <h3 className="text-lg font-black text-[#1E3A5F] flex items-center gap-2">
                   <span>🏠</span> Home & Top Announcement Bar
                 </h3>
                 <button
                   onClick={() => locateSection("live-topbar", "home")}
-                  className="text-xs bg-blue-600 hover:bg-blue-500 text-white font-bold px-2.5 py-1 rounded-md"
+                  className="text-xs bg-blue-600 hover:bg-blue-700 text-white font-bold px-3 py-1.5 rounded-lg"
                 >
-                  📍 Locate on Site
+                  📍 View on Site
                 </button>
               </div>
 
               {/* Announcement Bar */}
-              <div className="bg-slate-800/80 p-4 rounded-2xl border border-slate-700 space-y-3">
-                <h4 className="font-extrabold text-xs uppercase tracking-wider text-blue-400">
+              <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-3">
+                <h4 className="font-extrabold text-xs uppercase tracking-wider text-blue-700">
                   Top Sticky Banner
                 </h4>
                 <div>
-                  <label className="text-[11px] text-slate-400 block font-semibold mb-1">Banner Announcement Text</label>
+                  <label className="text-[11px] text-slate-600 block font-bold mb-1">Banner Announcement Text</label>
                   <input
                     type="text"
                     value={content.announcement.text}
@@ -1078,12 +1074,12 @@ export default function AdminPage() {
                         announcement: { ...content.announcement, text: e.target.value },
                       })
                     }
-                    className="w-full bg-slate-900 text-white text-xs px-3 py-2 rounded-xl border border-slate-700"
+                    className="w-full bg-white text-slate-900 text-xs px-3 py-2 rounded-xl border border-slate-300"
                   />
                 </div>
                 <div className="grid grid-cols-2 gap-2">
                   <div>
-                    <label className="text-[11px] text-slate-400 block font-semibold mb-1">Grade Pill</label>
+                    <label className="text-[11px] text-slate-600 block font-bold mb-1">Grade Pill</label>
                     <input
                       type="text"
                       value={content.announcement.gradePill}
@@ -1093,11 +1089,11 @@ export default function AdminPage() {
                           announcement: { ...content.announcement, gradePill: e.target.value },
                         })
                       }
-                      className="w-full bg-slate-900 text-white text-xs px-3 py-2 rounded-xl border border-slate-700"
+                      className="w-full bg-white text-slate-900 text-xs px-3 py-2 rounded-xl border border-slate-300"
                     />
                   </div>
                   <div>
-                    <label className="text-[11px] text-slate-400 block font-semibold mb-1">CBSE Pill</label>
+                    <label className="text-[11px] text-slate-600 block font-bold mb-1">CBSE Pill</label>
                     <input
                       type="text"
                       value={content.announcement.cbsePill}
@@ -1107,83 +1103,83 @@ export default function AdminPage() {
                           announcement: { ...content.announcement, cbsePill: e.target.value },
                         })
                       }
-                      className="w-full bg-slate-900 text-white text-xs px-3 py-2 rounded-xl border border-slate-700"
+                      className="w-full bg-white text-slate-900 text-xs px-3 py-2 rounded-xl border border-slate-300"
                     />
                   </div>
                 </div>
               </div>
 
               {/* Hero Section */}
-              <div className="bg-slate-800/80 p-4 rounded-2xl border border-slate-700 space-y-3">
-                <h4 className="font-extrabold text-xs uppercase tracking-wider text-amber-400">
+              <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-3">
+                <h4 className="font-extrabold text-xs uppercase tracking-wider text-amber-700">
                   Hero Section
                 </h4>
                 <div>
-                  <label className="text-[11px] text-slate-400 block font-semibold mb-1">Badge</label>
+                  <label className="text-[11px] text-slate-600 block font-bold mb-1">Badge</label>
                   <input
                     type="text"
                     value={content.hero.badge}
                     onChange={(e) =>
                       setContent({ ...content, hero: { ...content.hero, badge: e.target.value } })
                     }
-                    className="w-full bg-slate-900 text-white text-xs px-3 py-2 rounded-xl border border-slate-700"
+                    className="w-full bg-white text-slate-900 text-xs px-3 py-2 rounded-xl border border-slate-300"
                   />
                 </div>
                 <div className="grid grid-cols-3 gap-2">
                   <div>
-                    <label className="text-[10px] text-slate-400 block font-semibold mb-1">Line 1</label>
+                    <label className="text-[10px] text-slate-600 block font-bold mb-1">Line 1</label>
                     <input
                       type="text"
                       value={content.hero.titleLine1}
                       onChange={(e) =>
                         setContent({ ...content, hero: { ...content.hero, titleLine1: e.target.value } })
                       }
-                      className="w-full bg-slate-900 text-white text-xs px-2 py-1.5 rounded-lg border border-slate-700"
+                      className="w-full bg-white text-slate-900 text-xs px-2 py-1.5 rounded-lg border border-slate-300"
                     />
                   </div>
                   <div>
-                    <label className="text-[10px] text-slate-400 block font-semibold mb-1">Line 2</label>
+                    <label className="text-[10px] text-slate-600 block font-bold mb-1">Line 2</label>
                     <input
                       type="text"
                       value={content.hero.titleLine2}
                       onChange={(e) =>
                         setContent({ ...content, hero: { ...content.hero, titleLine2: e.target.value } })
                       }
-                      className="w-full bg-slate-900 text-white text-xs px-2 py-1.5 rounded-lg border border-slate-700"
+                      className="w-full bg-white text-slate-900 text-xs px-2 py-1.5 rounded-lg border border-slate-300"
                     />
                   </div>
                   <div>
-                    <label className="text-[10px] text-slate-400 block font-semibold mb-1">Highlight</label>
+                    <label className="text-[10px] text-slate-600 block font-bold mb-1">Highlight</label>
                     <input
                       type="text"
                       value={content.hero.titleHighlight}
                       onChange={(e) =>
                         setContent({ ...content, hero: { ...content.hero, titleHighlight: e.target.value } })
                       }
-                      className="w-full bg-slate-900 text-amber-400 font-bold text-xs px-2 py-1.5 rounded-lg border border-slate-700"
+                      className="w-full bg-white text-orange-600 font-bold text-xs px-2 py-1.5 rounded-lg border border-slate-300"
                     />
                   </div>
                 </div>
                 <div>
-                  <label className="text-[11px] text-slate-400 block font-semibold mb-1">Hero Description</label>
+                  <label className="text-[11px] text-slate-600 block font-bold mb-1">Hero Description</label>
                   <textarea
                     rows={2}
                     value={content.hero.desc}
                     onChange={(e) =>
                       setContent({ ...content, hero: { ...content.hero, desc: e.target.value } })
                     }
-                    className="w-full bg-slate-900 text-white text-xs p-2 rounded-xl border border-slate-700"
+                    className="w-full bg-white text-slate-900 text-xs p-2 rounded-xl border border-slate-300"
                   />
                 </div>
                 <div>
-                  <label className="text-[11px] text-slate-400 block font-semibold mb-1">YouTube Tour Video Link</label>
+                  <label className="text-[11px] text-slate-600 block font-bold mb-1">YouTube Tour Video Link</label>
                   <input
                     type="text"
                     value={content.hero.tourVideoUrl}
                     onChange={(e) =>
                       setContent({ ...content, hero: { ...content.hero, tourVideoUrl: e.target.value } })
                     }
-                    className="w-full bg-slate-900 text-white text-xs px-3 py-2 rounded-xl border border-slate-700"
+                    className="w-full bg-white text-slate-900 text-xs px-3 py-2 rounded-xl border border-slate-300"
                   />
                 </div>
               </div>
@@ -1195,25 +1191,25 @@ export default function AdminPage() {
           {/* ==================================================== */}
           {activeTab === "students" && (
             <div className="space-y-6">
-              <div className="flex items-center justify-between">
-                <h3 className="text-lg font-extrabold text-white flex items-center gap-2">
+              <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
+                <h3 className="text-lg font-black text-[#1E3A5F] flex items-center gap-2">
                   <span>🎓</span> Students & School Statistics
                 </h3>
                 <button
                   onClick={() => locateSection("live-students", "students")}
-                  className="text-xs bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-2.5 py-1 rounded-md"
+                  className="text-xs bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-3 py-1.5 rounded-lg"
                 >
-                  📍 Locate on Site
+                  📍 View on Site
                 </button>
               </div>
 
               {/* Students Page Content */}
-              <div className="bg-slate-800/80 p-4 rounded-2xl border border-slate-700 space-y-3">
-                <h4 className="font-extrabold text-xs uppercase tracking-wider text-emerald-400">
+              <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-3">
+                <h4 className="font-extrabold text-xs uppercase tracking-wider text-emerald-700">
                   /students Page Content
                 </h4>
                 <div>
-                  <label className="text-[11px] text-slate-400 block font-semibold mb-1">Headline</label>
+                  <label className="text-[11px] text-slate-600 block font-bold mb-1">Headline</label>
                   <input
                     type="text"
                     value={content.students?.totalCount || ""}
@@ -1223,11 +1219,11 @@ export default function AdminPage() {
                         students: { ...content.students, totalCount: e.target.value },
                       })
                     }
-                    className="w-full bg-slate-900 text-white font-bold text-xs px-3 py-2 rounded-xl border border-slate-700"
+                    className="w-full bg-white text-slate-900 font-bold text-xs px-3 py-2 rounded-xl border border-slate-300"
                   />
                 </div>
                 <div>
-                  <label className="text-[11px] text-slate-400 block font-semibold mb-1">Description</label>
+                  <label className="text-[11px] text-slate-600 block font-bold mb-1">Description</label>
                   <textarea
                     rows={2}
                     value={content.students?.desc || ""}
@@ -1237,59 +1233,59 @@ export default function AdminPage() {
                         students: { ...content.students, desc: e.target.value },
                       })
                     }
-                    className="w-full bg-slate-900 text-white text-xs p-2 rounded-xl border border-slate-700"
+                    className="w-full bg-white text-slate-900 text-xs p-2 rounded-xl border border-slate-300"
                   />
                 </div>
               </div>
 
               {/* Key Numerical Stats on Homepage */}
-              <div className="bg-slate-800/80 p-4 rounded-2xl border border-slate-700 space-y-3">
-                <h4 className="font-extrabold text-xs uppercase tracking-wider text-blue-400">
+              <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-3">
+                <h4 className="font-extrabold text-xs uppercase tracking-wider text-blue-700">
                   Homepage Counter Statistics
                 </h4>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="text-[10px] text-slate-400 block font-semibold">Total Students</label>
+                    <label className="text-[10px] text-slate-600 block font-bold">Total Students</label>
                     <input
                       type="text"
                       value={content.stats.students}
                       onChange={(e) =>
                         setContent({ ...content, stats: { ...content.stats, students: e.target.value } })
                       }
-                      className="w-full bg-slate-900 text-yellow-400 font-black text-sm px-2 py-1.5 rounded-lg border border-slate-700"
+                      className="w-full bg-white text-blue-800 font-black text-sm px-2.5 py-1.5 rounded-lg border border-slate-300"
                     />
                   </div>
                   <div>
-                    <label className="text-[10px] text-slate-400 block font-semibold">Teachers Count</label>
+                    <label className="text-[10px] text-slate-600 block font-bold">Teachers Count</label>
                     <input
                       type="text"
                       value={content.stats.teachers}
                       onChange={(e) =>
                         setContent({ ...content, stats: { ...content.stats, teachers: e.target.value } })
                       }
-                      className="w-full bg-slate-900 text-yellow-400 font-black text-sm px-2 py-1.5 rounded-lg border border-slate-700"
+                      className="w-full bg-white text-blue-800 font-black text-sm px-2.5 py-1.5 rounded-lg border border-slate-300"
                     />
                   </div>
                   <div>
-                    <label className="text-[10px] text-slate-400 block font-semibold">Student-Teacher Ratio</label>
+                    <label className="text-[10px] text-slate-600 block font-bold">Student-Teacher Ratio</label>
                     <input
                       type="text"
                       value={content.stats.ratio}
                       onChange={(e) =>
                         setContent({ ...content, stats: { ...content.stats, ratio: e.target.value } })
                       }
-                      className="w-full bg-slate-900 text-yellow-400 font-black text-sm px-2 py-1.5 rounded-lg border border-slate-700"
+                      className="w-full bg-white text-blue-800 font-black text-sm px-2.5 py-1.5 rounded-lg border border-slate-300"
                     />
                   </div>
                   <div>
-                    <label className="text-[10px] text-slate-400 block font-semibold">Academic Pass Rate</label>
+                    <label className="text-[10px] text-slate-600 block font-bold">Academic Pass Rate</label>
                     <input
                       type="text"
                       value={content.stats.passRate}
                       onChange={(e) =>
                         setContent({ ...content, stats: { ...content.stats, passRate: e.target.value } })
                       }
-                      className="w-full bg-slate-900 text-yellow-400 font-black text-sm px-2 py-1.5 rounded-lg border border-slate-700"
+                      className="w-full bg-white text-blue-800 font-black text-sm px-2.5 py-1.5 rounded-lg border border-slate-300"
                     />
                   </div>
                 </div>
@@ -1302,21 +1298,21 @@ export default function AdminPage() {
           {/* ==================================================== */}
           {activeTab === "popup" && (
             <div className="space-y-6">
-              <div className="flex items-center justify-between">
-                <h3 className="text-lg font-extrabold text-white flex items-center gap-2">
+              <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
+                <h3 className="text-lg font-black text-[#1E3A5F] flex items-center gap-2">
                   <span>🚨</span> Admissions / Urgent Pop-up Alert
                 </h3>
                 <button
                   onClick={() => locateSection("live-popup", "home")}
-                  className="text-xs bg-rose-600 hover:bg-rose-500 text-white font-bold px-2.5 py-1 rounded-md"
+                  className="text-xs bg-rose-600 hover:bg-rose-700 text-white font-bold px-3 py-1.5 rounded-lg"
                 >
-                  📍 Locate on Site
+                  📍 View on Site
                 </button>
               </div>
 
-              <div className="bg-slate-800/80 p-4 rounded-2xl border border-slate-700 space-y-4">
+              <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-4">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold text-white">Enable Pop-up Modal on Website:</span>
+                  <span className="text-xs font-bold text-slate-800">Enable Pop-up Modal on Website:</span>
                   <label className="relative inline-flex items-center cursor-pointer">
                     <input
                       type="checkbox"
@@ -1329,12 +1325,12 @@ export default function AdminPage() {
                       }
                       className="sr-only peer"
                     />
-                    <div className="w-11 h-6 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500"></div>
+                    <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500"></div>
                   </label>
                 </div>
 
                 <div>
-                  <label className="text-[11px] text-slate-400 block font-semibold mb-1">Pop-up Title</label>
+                  <label className="text-[11px] text-slate-600 block font-bold mb-1">Pop-up Title</label>
                   <input
                     type="text"
                     value={content.popupAlert.title}
@@ -1344,12 +1340,12 @@ export default function AdminPage() {
                         popupAlert: { ...content.popupAlert, title: e.target.value },
                       })
                     }
-                    className="w-full bg-slate-900 text-white text-xs px-3 py-2 rounded-xl border border-slate-700"
+                    className="w-full bg-white text-slate-900 text-xs px-3 py-2 rounded-xl border border-slate-300"
                   />
                 </div>
 
                 <div>
-                  <label className="text-[11px] text-slate-400 block font-semibold mb-1">Pop-up Message</label>
+                  <label className="text-[11px] text-slate-600 block font-bold mb-1">Pop-up Message</label>
                   <textarea
                     rows={3}
                     value={content.popupAlert.message}
@@ -1359,12 +1355,12 @@ export default function AdminPage() {
                         popupAlert: { ...content.popupAlert, message: e.target.value },
                       })
                     }
-                    className="w-full bg-slate-900 text-white text-xs p-2 rounded-xl border border-slate-700"
+                    className="w-full bg-white text-slate-900 text-xs p-2 rounded-xl border border-slate-300"
                   />
                 </div>
 
                 <div>
-                  <label className="text-[11px] text-slate-400 block font-semibold mb-1">CTA Button Text</label>
+                  <label className="text-[11px] text-slate-600 block font-bold mb-1">CTA Button Text</label>
                   <input
                     type="text"
                     value={content.popupAlert.ctaText}
@@ -1374,7 +1370,7 @@ export default function AdminPage() {
                         popupAlert: { ...content.popupAlert, ctaText: e.target.value },
                       })
                     }
-                    className="w-full bg-slate-900 text-white text-xs px-3 py-2 rounded-xl border border-slate-700"
+                    className="w-full bg-white text-slate-900 text-xs px-3 py-2 rounded-xl border border-slate-300"
                   />
                 </div>
               </div>
@@ -1386,21 +1382,21 @@ export default function AdminPage() {
           {/* ==================================================== */}
           {activeTab === "contact" && (
             <div className="space-y-6">
-              <div className="flex items-center justify-between">
-                <h3 className="text-lg font-extrabold text-white flex items-center gap-2">
+              <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
+                <h3 className="text-lg font-black text-[#1E3A5F] flex items-center gap-2">
                   <span>📍</span> Campus Address & Contact Info
                 </h3>
                 <button
                   onClick={() => locateSection("live-contact", "home")}
-                  className="text-xs bg-slate-700 hover:bg-slate-600 text-white font-bold px-2.5 py-1 rounded-md"
+                  className="text-xs bg-slate-700 hover:bg-slate-800 text-white font-bold px-3 py-1.5 rounded-lg"
                 >
-                  📍 Locate on Site
+                  📍 View on Site
                 </button>
               </div>
 
-              <div className="bg-slate-800/80 p-4 rounded-2xl border border-slate-700 space-y-3">
+              <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-3">
                 <div>
-                  <label className="text-[11px] text-slate-400 block font-semibold mb-1">School Name</label>
+                  <label className="text-[11px] text-slate-600 block font-bold mb-1">School Name</label>
                   <input
                     type="text"
                     value={content.contact.schoolName}
@@ -1410,11 +1406,11 @@ export default function AdminPage() {
                         contact: { ...content.contact, schoolName: e.target.value },
                       })
                     }
-                    className="w-full bg-slate-900 text-white text-xs px-3 py-2 rounded-xl border border-slate-700"
+                    className="w-full bg-white text-slate-900 text-xs px-3 py-2 rounded-xl border border-slate-300"
                   />
                 </div>
                 <div>
-                  <label className="text-[11px] text-slate-400 block font-semibold mb-1">Address</label>
+                  <label className="text-[11px] text-slate-600 block font-bold mb-1">Address</label>
                   <textarea
                     rows={2}
                     value={content.contact.address}
@@ -1424,12 +1420,12 @@ export default function AdminPage() {
                         contact: { ...content.contact, address: e.target.value },
                       })
                     }
-                    className="w-full bg-slate-900 text-white text-xs p-2 rounded-xl border border-slate-700"
+                    className="w-full bg-white text-slate-900 text-xs p-2 rounded-xl border border-slate-300"
                   />
                 </div>
                 <div className="grid grid-cols-2 gap-2">
                   <div>
-                    <label className="text-[11px] text-slate-400 block font-semibold mb-1">Phone</label>
+                    <label className="text-[11px] text-slate-600 block font-bold mb-1">Phone</label>
                     <input
                       type="text"
                       value={content.contact.phone}
@@ -1439,11 +1435,11 @@ export default function AdminPage() {
                           contact: { ...content.contact, phone: e.target.value },
                         })
                       }
-                      className="w-full bg-slate-900 text-white text-xs px-3 py-2 rounded-xl border border-slate-700"
+                      className="w-full bg-white text-slate-900 text-xs px-3 py-2 rounded-xl border border-slate-300"
                     />
                   </div>
                   <div>
-                    <label className="text-[11px] text-slate-400 block font-semibold mb-1">Email</label>
+                    <label className="text-[11px] text-slate-600 block font-bold mb-1">Email</label>
                     <input
                       type="text"
                       value={content.contact.email}
@@ -1453,7 +1449,7 @@ export default function AdminPage() {
                           contact: { ...content.contact, email: e.target.value },
                         })
                       }
-                      className="w-full bg-slate-900 text-white text-xs px-3 py-2 rounded-xl border border-slate-700"
+                      className="w-full bg-white text-slate-900 text-xs px-3 py-2 rounded-xl border border-slate-300"
                     />
                   </div>
                 </div>
@@ -1464,7 +1460,7 @@ export default function AdminPage() {
         </div>
 
         {/* RIGHT COLUMN: LIVE WEBSITE INSPECTOR (MIMICS REAL SITE EXACTLY) */}
-        <div className="hidden lg:flex flex-1 bg-slate-950 flex-col overflow-hidden p-4 items-center justify-center">
+        <div className="hidden lg:flex flex-1 bg-slate-200/80 flex-col overflow-hidden p-4 items-center justify-center">
           
           <div
             className={`w-full h-full bg-[#FFFDF7] rounded-2xl overflow-y-auto custom-scrollbar shadow-2xl transition-all duration-300 ${
@@ -1477,7 +1473,141 @@ export default function AdminPage() {
             ref={previewScrollRef}
           >
             
-            {/* LIVE INSPECTOR: PAGE 1 - HOME PAGE */}
+            {/* LIVE INSPECTOR: PAGE 1 - FEES OVERVIEW (/fees) */}
+            {previewPage === "fees" && (
+              <div className="fees-page" style={{ paddingTop: "20px", minHeight: "100%" }}>
+                <div className="fees-hero">
+                  <h1 className="fees-title">Transparent & Premium Education</h1>
+                  <p className="fees-subtitle">Fee Structure for Academic Year 2026-2027</p>
+                </div>
+
+                <div
+                  id="live-fees-cards"
+                  className={`fees-content ${highlightedSection === "live-fees-cards" ? "site-highlight" : ""}`}
+                >
+                  <div className="fees-grid">
+                    {/* Tuition Card (Dynamic Range Synced with Class Table!) */}
+                    <div className="fee-card card-blue">
+                      <div className="fee-icon">🎓</div>
+                      <h3>School Tuition Fees</h3>
+                      <p className="fee-desc">Class-specific academic tuition fees from LKG to 5th Standard.</p>
+                      <div className="fee-price">
+                        <span className="amount">₹{lowestFee} – ₹{highestFee}</span>
+                        <span className="period">/ year</span>
+                      </div>
+                      <ul className="fee-features">
+                        <li><i className="ti ti-check"></i> Core Academic Syllabus</li>
+                        <li><i className="ti ti-check"></i> Term Examinations</li>
+                        <li><i className="ti ti-check"></i> Digital Classroom Access</li>
+                      </ul>
+                      <div
+                        onClick={() => setPreviewPage("school-fees")}
+                        className="mt-3 text-center text-xs font-bold text-blue-600 cursor-pointer hover:underline"
+                      >
+                        View Class-by-Class Table (LKG to 5th) →
+                      </div>
+                    </div>
+
+                    {/* Book Card */}
+                    <div className="fee-card card-orange">
+                      <div className="fee-icon">📚</div>
+                      <h3>{content.fees?.additional?.book?.title}</h3>
+                      <p className="fee-desc">{content.fees?.additional?.book?.desc}</p>
+                      <div className="fee-price">
+                        <span className="amount">{content.fees?.additional?.book?.amount}</span>
+                        <span className="period">{content.fees?.additional?.book?.period}</span>
+                      </div>
+                      <ul className="fee-features">
+                        {content.fees?.additional?.book?.features?.map((f, i) => (
+                          <li key={i}><i className="ti ti-check"></i> {f}</li>
+                        ))}
+                      </ul>
+                    </div>
+
+                    {/* Bus Card */}
+                    <div className="fee-card card-green">
+                      <div className="fee-icon">🚌</div>
+                      <h3>{content.fees?.additional?.bus?.title}</h3>
+                      <p className="fee-desc">{content.fees?.additional?.bus?.desc}</p>
+                      <div className="fee-price">
+                        <span className="amount">{content.fees?.additional?.bus?.amount}</span>
+                        <span className="period">{content.fees?.additional?.bus?.period}</span>
+                      </div>
+                      <ul className="fee-features">
+                        {content.fees?.additional?.bus?.features?.map((f, i) => (
+                          <li key={i}><i className="ti ti-check"></i> {f}</li>
+                        ))}
+                      </ul>
+                    </div>
+
+                    {/* Activity Card */}
+                    <div className="fee-card card-pink">
+                      <div className="fee-icon">🎨</div>
+                      <h3>{content.fees?.additional?.activity?.title}</h3>
+                      <p className="fee-desc">{content.fees?.additional?.activity?.desc}</p>
+                      <div className="fee-price">
+                        <span className="amount">{content.fees?.additional?.activity?.amount}</span>
+                        <span className="period">{content.fees?.additional?.activity?.period}</span>
+                      </div>
+                      <ul className="fee-features">
+                        {content.fees?.additional?.activity?.features?.map((f, i) => (
+                          <li key={i}><i className="ti ti-check"></i> {f}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  </div>
+
+                  <div className="fees-note mt-6">
+                    <p>{content.fees?.additional?.note}</p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* LIVE INSPECTOR: PAGE 2 - CLASS-WISE TUITION (/fees/school) */}
+            {previewPage === "school-fees" && (
+              <div className="fees-page" style={{ paddingTop: "40px", minHeight: "100%" }}>
+                <div className="section-container">
+                  <h1 style={{ color: "#1E3A5F", textAlign: "center", marginBottom: "20px", fontSize: "28px" }}>
+                    School Tuition Fees (2026-27)
+                  </h1>
+
+                  <div
+                    id="live-school-table"
+                    className={`max-w-[550px] mx-auto bg-white rounded-2xl p-6 shadow-xl border border-slate-100 ${
+                      highlightedSection === "live-school-table" ? "site-highlight" : ""
+                    }`}
+                  >
+                    <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                      <thead>
+                        <tr style={{ background: "#f8fafc", borderBottom: "2px solid #e2e8f0" }}>
+                          <th style={{ padding: "12px", textAlign: "left", fontWeight: 800, fontSize: "14px" }}>
+                            Class
+                          </th>
+                          <th style={{ padding: "12px", textAlign: "right", fontWeight: 800, fontSize: "14px" }}>
+                            2026-27 Fees (Rs.)
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {content.fees?.classList?.map((item, idx) => (
+                          <tr key={idx} style={{ borderBottom: "1px solid #f1f5f9" }}>
+                            <td style={{ padding: "12px", fontWeight: 600, fontSize: "14px" }}>
+                              {item.standard}
+                            </td>
+                            <td style={{ padding: "12px", textAlign: "right", fontWeight: 700, color: "#1E3A5F", fontSize: "14px" }}>
+                              {item.amount.startsWith("₹") ? item.amount : `₹${item.amount}`}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* LIVE INSPECTOR: PAGE 3 - HOME PAGE */}
             {previewPage === "home" && (
               <div>
                 {/* Top Announcement Bar */}
@@ -1585,140 +1715,6 @@ export default function AdminPage() {
                     </div>
                   </div>
                 </section>
-              </div>
-            )}
-
-            {/* LIVE INSPECTOR: PAGE 2 - FEES OVERVIEW (/fees) */}
-            {previewPage === "fees" && (
-              <div className="fees-page" style={{ paddingTop: "20px", minHeight: "100%" }}>
-                <div className="fees-hero">
-                  <h1 className="fees-title">Transparent & Premium Education</h1>
-                  <p className="fees-subtitle">Fee Structure for Academic Year 2026-2027</p>
-                </div>
-
-                <div
-                  id="live-fees-cards"
-                  className={`fees-content ${highlightedSection === "live-fees-cards" ? "site-highlight" : ""}`}
-                >
-                  <div className="fees-grid">
-                    {/* Tuition Card */}
-                    <div className="fee-card card-blue">
-                      <div className="fee-icon">🎓</div>
-                      <h3>{content.fees?.overview?.tuition?.title}</h3>
-                      <p className="fee-desc">{content.fees?.overview?.tuition?.desc}</p>
-                      <div className="fee-price">
-                        <span className="amount">{content.fees?.overview?.tuition?.amount}</span>
-                        <span className="period">{content.fees?.overview?.tuition?.period}</span>
-                      </div>
-                      <ul className="fee-features">
-                        {content.fees?.overview?.tuition?.features?.map((f, i) => (
-                          <li key={i}><i className="ti ti-check"></i> {f}</li>
-                        ))}
-                      </ul>
-                      <div
-                        onClick={() => setPreviewPage("school-fees")}
-                        className="mt-3 text-center text-xs font-bold text-blue-600 cursor-pointer hover:underline"
-                      >
-                        Click to view Class-wise breakdown (LKG to 5th) →
-                      </div>
-                    </div>
-
-                    {/* Book Card */}
-                    <div className="fee-card card-orange">
-                      <div className="fee-icon">📚</div>
-                      <h3>{content.fees?.overview?.book?.title}</h3>
-                      <p className="fee-desc">{content.fees?.overview?.book?.desc}</p>
-                      <div className="fee-price">
-                        <span className="amount">{content.fees?.overview?.book?.amount}</span>
-                        <span className="period">{content.fees?.overview?.book?.period}</span>
-                      </div>
-                      <ul className="fee-features">
-                        {content.fees?.overview?.book?.features?.map((f, i) => (
-                          <li key={i}><i className="ti ti-check"></i> {f}</li>
-                        ))}
-                      </ul>
-                    </div>
-
-                    {/* Bus Card */}
-                    <div className="fee-card card-green">
-                      <div className="fee-icon">🚌</div>
-                      <h3>{content.fees?.overview?.bus?.title}</h3>
-                      <p className="fee-desc">{content.fees?.overview?.bus?.desc}</p>
-                      <div className="fee-price">
-                        <span className="amount">{content.fees?.overview?.bus?.amount}</span>
-                        <span className="period">{content.fees?.overview?.bus?.period}</span>
-                      </div>
-                      <ul className="fee-features">
-                        {content.fees?.overview?.bus?.features?.map((f, i) => (
-                          <li key={i}><i className="ti ti-check"></i> {f}</li>
-                        ))}
-                      </ul>
-                    </div>
-
-                    {/* Activity Card */}
-                    <div className="fee-card card-pink">
-                      <div className="fee-icon">🎨</div>
-                      <h3>{content.fees?.overview?.activity?.title}</h3>
-                      <p className="fee-desc">{content.fees?.overview?.activity?.desc}</p>
-                      <div className="fee-price">
-                        <span className="amount">{content.fees?.overview?.activity?.amount}</span>
-                        <span className="period">{content.fees?.overview?.activity?.period}</span>
-                      </div>
-                      <ul className="fee-features">
-                        {content.fees?.overview?.activity?.features?.map((f, i) => (
-                          <li key={i}><i className="ti ti-check"></i> {f}</li>
-                        ))}
-                      </ul>
-                    </div>
-                  </div>
-
-                  <div className="fees-note mt-6">
-                    <p>{content.fees?.overview?.note}</p>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* LIVE INSPECTOR: PAGE 3 - CLASS-WISE TUITION (/fees/school) */}
-            {previewPage === "school-fees" && (
-              <div className="fees-page" style={{ paddingTop: "40px", minHeight: "100%" }}>
-                <div className="section-container">
-                  <h1 style={{ color: "#1E3A5F", textAlign: "center", marginBottom: "20px", fontSize: "28px" }}>
-                    School Tuition Fees (2026-27)
-                  </h1>
-
-                  <div
-                    id="live-school-table"
-                    className={`max-w-[550px] mx-auto bg-white rounded-2xl p-6 shadow-xl border border-slate-100 ${
-                      highlightedSection === "live-school-table" ? "site-highlight" : ""
-                    }`}
-                  >
-                    <table style={{ width: "100%", borderCollapse: "collapse" }}>
-                      <thead>
-                        <tr style={{ background: "#f8fafc", borderBottom: "2px solid #e2e8f0" }}>
-                          <th style={{ padding: "12px", textAlign: "left", fontWeight: 800, fontSize: "14px" }}>
-                            Class
-                          </th>
-                          <th style={{ padding: "12px", textAlign: "right", fontWeight: 800, fontSize: "14px" }}>
-                            2026-27 Fees (Rs.)
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {content.fees?.classList?.map((item, idx) => (
-                          <tr key={idx} style={{ borderBottom: "1px solid #f1f5f9" }}>
-                            <td style={{ padding: "12px", fontWeight: 600, fontSize: "14px" }}>
-                              {item.standard}
-                            </td>
-                            <td style={{ padding: "12px", textAlign: "right", fontWeight: 700, color: "#1E3A5F", fontSize: "14px" }}>
-                              {item.amount.startsWith("₹") ? item.amount : `₹${item.amount}`}
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
               </div>
             )}
 

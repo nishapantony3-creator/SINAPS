@@ -8,7 +8,7 @@ import FloatingShapes from "@/components/FloatingShapes";
 import siteContent from "@/data/siteContent.json";
 
 export default function BookFeesPage() {
-  const book = siteContent.fees?.overview?.book || {
+  const book = siteContent.fees?.additional?.book || {
     title: "Book & Stationery Fees",
     amount: "₹1,500",
     period: "/ year",

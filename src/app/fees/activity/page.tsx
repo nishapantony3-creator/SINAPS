@@ -8,7 +8,7 @@ import FloatingShapes from "@/components/FloatingShapes";
 import siteContent from "@/data/siteContent.json";
 
 export default function ActivityFeesPage() {
-  const activity = siteContent.fees?.overview?.activity || {
+  const activity = siteContent.fees?.additional?.activity || {
     title: "Extracurricular Activities",
     amount: "₹2,000",
     period: "/ year",

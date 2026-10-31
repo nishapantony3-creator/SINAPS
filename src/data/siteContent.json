@@ -60,53 +60,6 @@
     "passRate": "100%"
   },
   "fees": {
-    "overview": {
-      "tuition": {
-        "title": "School Tuition Fees",
-        "amount": "₹18,500",
-        "period": "/ term",
-        "desc": "Includes term fees, library access, and standard curriculum materials.",
-        "features": [
-          "Core Academic Syllabus",
-          "Term Examinations",
-          "Digital Classroom Access"
-        ]
-      },
-      "book": {
-        "title": "Book & Stationery Fees",
-        "amount": "₹1,500",
-        "period": "/ year",
-        "desc": "Complete set of CBSE textbooks, notebooks, and learning kits.",
-        "features": [
-          "All Textbooks",
-          "School Notebooks",
-          "Art & Craft Supplies"
-        ]
-      },
-      "bus": {
-        "title": "School Bus Transport",
-        "amount": "₹1,500",
-        "period": "/ term",
-        "desc": "Safe transportation across Budapadi and Erode areas. (Note: based on distance)",
-        "features": [
-          "Safe & Comfortable Seating",
-          "Female Attendant on Board",
-          "Experienced Drivers"
-        ]
-      },
-      "activity": {
-        "title": "Extracurricular Activities",
-        "amount": "₹2,000",
-        "period": "/ year",
-        "desc": "Sports, music, arts, and special events throughout the year.",
-        "features": [
-          "Weekly Sports Coaching",
-          "Music & Dance Classes",
-          "Annual Day & Field Trips"
-        ]
-      },
-      "note": "Note: Fees are subject to minor adjustments based on the specific grade (Pre-KG vs 5th Std). Please contact the admissions office at +91 63806 56434 for a personalized fee breakdown for your child."
-    },
     "classList": [
       {
         "standard": "LKG",
@@ -132,7 +85,43 @@
         "standard": "IV & V",
         "amount": "23,100"
       }
-    ]
+    ],
+    "additional": {
+      "book": {
+        "title": "Book & Stationery Fees",
+        "amount": "₹1,500",
+        "period": "/ year",
+        "desc": "Complete set of CBSE textbooks, notebooks, and learning kits.",
+        "features": [
+          "All Textbooks",
+          "School Notebooks",
+          "Art & Craft Supplies"
+        ]
+      },
+      "bus": {
+        "title": "School Bus Transport",
+        "amount": "₹1,500",
+        "period": "/ term (Base)",
+        "desc": "Safe transportation across Budapadi and Erode areas. (Note: based on distance)",
+        "features": [
+          "Safe & Comfortable Seating",
+          "Female Attendant on Board",
+          "Experienced Drivers"
+        ]
+      },
+      "activity": {
+        "title": "Extracurricular Activities",
+        "amount": "₹2,000",
+        "period": "/ year",
+        "desc": "Sports, music, arts, and special events throughout the year.",
+        "features": [
+          "Weekly Sports Coaching",
+          "Music & Dance Classes",
+          "Annual Day & Field Trips"
+        ]
+      },
+      "note": "Note: Tuition fees are grade-specific (LKG to 5th Std). Bus fees vary by distance. Contact admissions office at +91 63806 56434 for exact breakdown."
+    }
   },
   "teachers": [
     {

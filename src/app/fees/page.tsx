@@ -20,14 +20,11 @@ export default function FeesPage() {
     visible: { y: 0, opacity: 1, transition: { type: "spring" as const, stiffness: 90, damping: 14 } }
   };
 
-  const overview = siteContent.fees?.overview || {
-    tuition: {
-      title: "School Tuition Fees",
-      amount: "₹18,500",
-      period: "/ term",
-      desc: "Includes term fees, library access, and standard curriculum materials.",
-      features: ["Core Academic Syllabus", "Term Examinations", "Digital Classroom Access"]
-    },
+  const classList = siteContent.fees?.classList || [];
+  const lowestFee = classList.length > 0 ? classList[0].amount : "19,800";
+  const highestFee = classList.length > 0 ? classList[classList.length - 1].amount : "23,100";
+
+  const additional = siteContent.fees?.additional || {
     book: {
       title: "Book & Stationery Fees",
       amount: "₹1,500",
@@ -38,7 +35,7 @@ export default function FeesPage() {
     bus: {
       title: "School Bus Transport",
       amount: "₹1,500",
-      period: "/ term",
+      period: "/ term (Base)",
       desc: "Safe transportation across Budapadi and Erode areas. (Note: based on distance)",
       features: ["Safe & Comfortable Seating", "Female Attendant on Board", "Experienced Drivers"]
     },
@@ -49,7 +46,7 @@ export default function FeesPage() {
       desc: "Sports, music, arts, and special events throughout the year.",
       features: ["Weekly Sports Coaching", "Music & Dance Classes", "Annual Day & Field Trips"]
     },
-    note: "Note: Fees are subject to minor adjustments based on the specific grade (Pre-KG vs 5th Std). Please contact the admissions office at +91 63806 56434 for a personalized fee breakdown for your child."
+    note: "Note: Tuition fees are grade-specific (LKG to 5th Std). Bus fees vary by distance. Contact admissions office at +91 63806 56434 for exact breakdown."
   };
 
   return (
@@ -69,75 +66,75 @@ export default function FeesPage() {
         <section className="fees-content">
           <motion.div className="fees-grid" variants={container} initial="hidden" animate="visible">
             
-            {/* School Fees */}
+            {/* 1. School Tuition Fees (Synced with Class Table) */}
             <motion.div className="fee-card card-blue" variants={item}>
               <Link href="/fees/school" style={{ textDecoration: 'none', color: 'inherit', display: 'block' }}>
                 <div className="fee-icon">🎓</div>
-                <h3>{overview.tuition.title}</h3>
-                <p className="fee-desc">{overview.tuition.desc}</p>
+                <h3>School Tuition Fees</h3>
+                <p className="fee-desc">Class-specific academic tuition fees from LKG to 5th Standard.</p>
                 <div className="fee-price">
-                  <span className="amount">{overview.tuition.amount}</span>
-                  <span className="period">{overview.tuition.period}</span>
+                  <span className="amount">₹{lowestFee} – ₹{highestFee}</span>
+                  <span className="period">/ year</span>
                 </div>
                 <ul className="fee-features">
-                  {overview.tuition.features.map((f, i) => (
-                    <li key={i}><i className="ti ti-check"></i> {f}</li>
-                  ))}
+                  <li><i className="ti ti-check"></i> Core Academic Syllabus</li>
+                  <li><i className="ti ti-check"></i> Term Examinations</li>
+                  <li><i className="ti ti-check"></i> Digital Classroom Access</li>
                 </ul>
-                <div style={{ marginTop: '16px', textAlign: 'center', fontSize: '13px', fontWeight: 700, color: 'var(--blue)' }}>
-                  Click to view Class-wise breakdown (LKG to 5th) →
+                <div style={{ marginTop: '16px', textAlign: 'center', fontSize: '13px', fontWeight: 800, color: 'var(--blue)' }}>
+                  View Class-by-Class Table (LKG to 5th) →
                 </div>
               </Link>
             </motion.div>
 
-            {/* Book Fees */}
+            {/* 2. Book Fees */}
             <motion.div className="fee-card card-orange" variants={item}>
               <Link href="/fees/book" style={{ textDecoration: 'none', color: 'inherit', display: 'block' }}>
                 <div className="fee-icon">📚</div>
-                <h3>{overview.book.title}</h3>
-                <p className="fee-desc">{overview.book.desc}</p>
+                <h3>{additional.book.title}</h3>
+                <p className="fee-desc">{additional.book.desc}</p>
                 <div className="fee-price">
-                  <span className="amount">{overview.book.amount}</span>
-                  <span className="period">{overview.book.period}</span>
+                  <span className="amount">{additional.book.amount}</span>
+                  <span className="period">{additional.book.period}</span>
                 </div>
                 <ul className="fee-features">
-                  {overview.book.features.map((f, i) => (
+                  {additional.book.features.map((f, i) => (
                     <li key={i}><i className="ti ti-check"></i> {f}</li>
                   ))}
                 </ul>
               </Link>
             </motion.div>
 
-            {/* Bus Fees */}
+            {/* 3. Bus Fees */}
             <motion.div className="fee-card card-green" variants={item}>
               <Link href="/fees/bus" style={{ textDecoration: 'none', color: 'inherit', display: 'block' }}>
                 <div className="fee-icon">🚌</div>
-                <h3>{overview.bus.title}</h3>
-                <p className="fee-desc">{overview.bus.desc}</p>
+                <h3>{additional.bus.title}</h3>
+                <p className="fee-desc">{additional.bus.desc}</p>
                 <div className="fee-price">
-                  <span className="amount">{overview.bus.amount}</span>
-                  <span className="period">{overview.bus.period}</span>
+                  <span className="amount">{additional.bus.amount}</span>
+                  <span className="period">{additional.bus.period}</span>
                 </div>
                 <ul className="fee-features">
-                  {overview.bus.features.map((f, i) => (
+                  {additional.bus.features.map((f, i) => (
                     <li key={i}><i className="ti ti-check"></i> {f}</li>
                   ))}
                 </ul>
               </Link>
             </motion.div>
 
-            {/* Activity Fees */}
+            {/* 4. Activity Fees */}
             <motion.div className="fee-card card-pink" variants={item}>
               <Link href="/fees/activity" style={{ textDecoration: 'none', color: 'inherit', display: 'block' }}>
                 <div className="fee-icon">🎨</div>
-                <h3>{overview.activity.title}</h3>
-                <p className="fee-desc">{overview.activity.desc}</p>
+                <h3>{additional.activity.title}</h3>
+                <p className="fee-desc">{additional.activity.desc}</p>
                 <div className="fee-price">
-                  <span className="amount">{overview.activity.amount}</span>
-                  <span className="period">{overview.activity.period}</span>
+                  <span className="amount">{additional.activity.amount}</span>
+                  <span className="period">{additional.activity.period}</span>
                 </div>
                 <ul className="fee-features">
-                  {overview.activity.features.map((f, i) => (
+                  {additional.activity.features.map((f, i) => (
                     <li key={i}><i className="ti ti-check"></i> {f}</li>
                   ))}
                 </ul>
@@ -148,7 +145,7 @@ export default function FeesPage() {
           
           <div className="fees-note">
             <i className="ti ti-info-circle"></i>
-            <p>{overview.note}</p>
+            <p>{additional.note}</p>
           </div>
         </section>
       </main>
