@@ -133,6 +133,21 @@ export default function AdminPage() {
   }, []);
 
   useEffect(() => {
+    if (typeof window !== "undefined") {
+      const existingScript = document.getElementById("sinaps-tailwind-cdn");
+      if (!existingScript) {
+        const s = document.createElement("script");
+        s.id = "sinaps-tailwind-cdn";
+        s.src = "/tailwind.min.js";
+        s.onerror = () => {
+          const fallback = document.createElement("script");
+          fallback.src = "https://cdn.tailwindcss.com";
+          document.head.appendChild(fallback);
+        };
+        document.head.appendChild(s);
+      }
+    }
+
     const savedPin = typeof window !== "undefined" ? localStorage.getItem("sinaps_admin_pin") : null;
     if (savedPin === "sinaps2026") {
       setIsAuthenticated(true);
