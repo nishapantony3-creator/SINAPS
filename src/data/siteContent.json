@@ -86,6 +86,38 @@
         "amount": "23,100"
       }
     ],
+    "busStops": [
+      {
+        "stopName": "Budapadi Local (0 – 3 KM)",
+        "amount": "1,500"
+      },
+      {
+        "stopName": "Anthiyur / Ammapettai (3 – 8 KM)",
+        "amount": "2,500"
+      },
+      {
+        "stopName": "Bhavani / Athani (8 – 15 KM)",
+        "amount": "3,500"
+      }
+    ],
+    "activityList": [
+      {
+        "activityName": "Sports & Athletic Coaching",
+        "amount": "1,500"
+      },
+      {
+        "activityName": "Music, Dance & Fine Arts",
+        "amount": "1,200"
+      },
+      {
+        "activityName": "Karate, Yoga & Physical Fitness",
+        "amount": "1,000"
+      },
+      {
+        "activityName": "Annual Day & Educational Field Trips",
+        "amount": "800"
+      }
+    ],
     "additional": {
       "book": {
         "title": "Book & Stationery Fees",
@@ -120,7 +152,7 @@
           "Annual Day & Field Trips"
         ]
       },
-      "note": "Note: Tuition fees are grade-specific (LKG to 5th Std). Bus fees vary by distance. Contact admissions office at +91 63806 56434 for exact breakdown."
+      "note": "Note: Tuition fees are grade-specific (LKG to 5th Std). Bus fees vary by distance and stop. Contact admissions office at +91 63806 56434 for exact breakdown."
     }
   },
   "teachers": [

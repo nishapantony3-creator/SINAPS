@@ -49,6 +49,16 @@ interface FeeClassItem {
   amount: string;
 }
 
+interface BusStopItem {
+  stopName: string;
+  amount: string;
+}
+
+interface ActivityItem {
+  activityName: string;
+  amount: string;
+}
+
 interface AdditionalFeeItem {
   title: string;
   amount: string;
@@ -59,6 +69,8 @@ interface AdditionalFeeItem {
 
 interface FeesConfig {
   classList: FeeClassItem[];
+  busStops: BusStopItem[];
+  activityList: ActivityItem[];
   additional: {
     book: AdditionalFeeItem;
     bus: AdditionalFeeItem;
@@ -110,10 +122,10 @@ export default function AdminPage() {
   // Device Mode
   const [deviceMode, setDeviceMode] = useState<"desktop" | "tablet" | "mobile">("desktop");
   
-  // Live Preview Page Switcher: 'fees' | 'school-fees' | 'home' | 'teachers' | 'students'
-  const [previewPage, setPreviewPage] = useState<"fees" | "school-fees" | "home" | "teachers" | "students">("fees");
+  // Live Preview Page Switcher: 'fees' | 'school-fees' | 'bus-fees' | 'activity-fees' | 'home' | 'teachers' | 'students'
+  const [previewPage, setPreviewPage] = useState<"fees" | "school-fees" | "bus-fees" | "activity-fees" | "home" | "teachers" | "students">("school-fees");
 
-  const [highlightedSection, setHighlightedSection] = useState<string | null>("live-fees-cards");
+  const [highlightedSection, setHighlightedSection] = useState<string | null>("live-school-table");
   
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [isPublishing, setIsPublishing] = useState<boolean>(false);
@@ -187,7 +199,7 @@ export default function AdminPage() {
     setPinInput("");
   };
 
-  const locateSection = (sectionId: string, pageName?: "fees" | "school-fees" | "home" | "teachers" | "students") => {
+  const locateSection = (sectionId: string, pageName?: "fees" | "school-fees" | "bus-fees" | "activity-fees" | "home" | "teachers" | "students") => {
     if (pageName) {
       setPreviewPage(pageName);
     }
@@ -343,16 +355,56 @@ export default function AdminPage() {
     setContent({ ...content, fees: { ...content.fees, classList: updated } });
   };
 
-  // --- ADDITIONAL FEES HELPERS ---
-  const handleAdditionalFeeChange = (
-    key: "book" | "bus" | "activity",
-    field: "amount" | "period" | "desc",
-    val: string
-  ) => {
+  // --- BUS STOPS HELPERS (NEW!) ---
+  const handleBusStopChange = (index: number, field: keyof BusStopItem, val: string) => {
     if (!content) return;
-    const additional = { ...content.fees.additional };
-    additional[key] = { ...additional[key], [field]: val };
-    setContent({ ...content, fees: { ...content.fees, additional } });
+    const current = content.fees.busStops || [];
+    const updated = [...current];
+    updated[index] = { ...updated[index], [field]: val };
+    setContent({ ...content, fees: { ...content.fees, busStops: updated } });
+  };
+
+  const handleAddBusStop = () => {
+    if (!content) return;
+    const current = content.fees.busStops || [];
+    const updated = [...current, { stopName: "New Bus Stop / Route", amount: "2,000" }];
+    setContent({ ...content, fees: { ...content.fees, busStops: updated } });
+    showToast("➕ Added new bus stop!");
+    locateSection("live-bus-table", "bus-fees");
+  };
+
+  const handleDeleteBusStop = (index: number) => {
+    if (!content) return;
+    const current = content.fees.busStops || [];
+    const updated = current.filter((_, i) => i !== index);
+    setContent({ ...content, fees: { ...content.fees, busStops: updated } });
+    showToast("Bus stop removed");
+  };
+
+  // --- EXTRACURRICULAR ACTIVITIES HELPERS (NEW!) ---
+  const handleActivityChange = (index: number, field: keyof ActivityItem, val: string) => {
+    if (!content) return;
+    const current = content.fees.activityList || [];
+    const updated = [...current];
+    updated[index] = { ...updated[index], [field]: val };
+    setContent({ ...content, fees: { ...content.fees, activityList: updated } });
+  };
+
+  const handleAddActivity = () => {
+    if (!content) return;
+    const current = content.fees.activityList || [];
+    const updated = [...current, { activityName: "New Activity Program", amount: "1,500" }];
+    setContent({ ...content, fees: { ...content.fees, activityList: updated } });
+    showToast("➕ Added new activity program!");
+    locateSection("live-activity-table", "activity-fees");
+  };
+
+  const handleDeleteActivity = (index: number) => {
+    if (!content) return;
+    const current = content.fees.activityList || [];
+    const updated = current.filter((_, i) => i !== index);
+    setContent({ ...content, fees: { ...content.fees, activityList: updated } });
+    showToast("Activity program removed");
   };
 
   // Lowest and highest tuition calculations for the live preview
@@ -473,28 +525,36 @@ export default function AdminPage() {
           <div className="hidden lg:flex items-center bg-[#132842] p-1 rounded-xl border border-blue-800 text-xs">
             <span className="text-[10px] text-blue-200 font-bold px-2 uppercase">Inspector View:</span>
             <button
-              onClick={() => { setPreviewPage("fees"); locateSection("live-fees-cards", "fees"); }}
-              className={`px-2.5 py-1 rounded-lg font-bold transition-all ${
-                previewPage === "fees" ? "bg-amber-400 text-slate-950 shadow" : "text-blue-200 hover:text-white"
-              }`}
-            >
-              💰 Fees Overview
-            </button>
-            <button
               onClick={() => { setPreviewPage("school-fees"); locateSection("live-school-table", "school-fees"); }}
               className={`px-2.5 py-1 rounded-lg font-bold transition-all ${
                 previewPage === "school-fees" ? "bg-amber-400 text-slate-950 shadow" : "text-blue-200 hover:text-white"
               }`}
             >
-              📊 Class Tuition Table
+              📊 Class Tuition
             </button>
             <button
-              onClick={() => { setPreviewPage("home"); locateSection("live-hero", "home"); }}
+              onClick={() => { setPreviewPage("bus-fees"); locateSection("live-bus-table", "bus-fees"); }}
               className={`px-2.5 py-1 rounded-lg font-bold transition-all ${
-                previewPage === "home" ? "bg-blue-500 text-white shadow" : "text-blue-200 hover:text-white"
+                previewPage === "bus-fees" ? "bg-emerald-400 text-slate-950 shadow" : "text-blue-200 hover:text-white"
               }`}
             >
-              🏠 Home
+              🚌 Bus Fees Table
+            </button>
+            <button
+              onClick={() => { setPreviewPage("activity-fees"); locateSection("live-activity-table", "activity-fees"); }}
+              className={`px-2.5 py-1 rounded-lg font-bold transition-all ${
+                previewPage === "activity-fees" ? "bg-pink-400 text-slate-950 shadow" : "text-blue-200 hover:text-white"
+              }`}
+            >
+              🎨 Activities Table
+            </button>
+            <button
+              onClick={() => { setPreviewPage("fees"); locateSection("live-fees-cards", "fees"); }}
+              className={`px-2.5 py-1 rounded-lg font-bold transition-all ${
+                previewPage === "fees" ? "bg-blue-400 text-slate-950 shadow" : "text-blue-200 hover:text-white"
+              }`}
+            >
+              💰 Fees Overview
             </button>
             <button
               onClick={() => { setPreviewPage("teachers"); locateSection("live-teachers", "teachers"); }}
@@ -503,14 +563,6 @@ export default function AdminPage() {
               }`}
             >
               👩‍🏫 Teachers
-            </button>
-            <button
-              onClick={() => { setPreviewPage("students"); locateSection("live-students", "students"); }}
-              className={`px-2.5 py-1 rounded-lg font-bold transition-all ${
-                previewPage === "students" ? "bg-emerald-500 text-white shadow" : "text-blue-200 hover:text-white"
-              }`}
-            >
-              🎓 Students
             </button>
           </div>
 
@@ -579,7 +631,7 @@ export default function AdminPage() {
             activeTab === "fees" ? "bg-[#1E3A5F] text-white shadow-md" : "bg-slate-100 text-slate-700 hover:bg-slate-200"
           }`}
         >
-          💰 Fees Structure (/fees & /fees/school)
+          💰 Fees Manager (Tuition, Bus & Activities)
         </button>
 
         <button
@@ -644,28 +696,42 @@ export default function AdminPage() {
         <div className="w-full lg:w-[48%] xl:w-[45%] bg-slate-50 border-r border-slate-200 overflow-y-auto custom-scrollbar p-4 lg:p-6 text-slate-800">
           
           {/* ==================================================== */}
-          {/* TAB 1: FEES & BUS STRUCTURE (RESOLVED NO MISMATCH) */}
+          {/* TAB 1: FEES & BUS STRUCTURE (FULL ADD BUTTONS FOR BUS & ACTIVITIES) */}
           {/* ==================================================== */}
           {activeTab === "fees" && (
             <div className="space-y-6">
-              <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
-                <div className="flex items-center justify-between">
+              <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
+                <div>
                   <h3 className="text-lg font-black text-[#1E3A5F] flex items-center gap-2">
                     <span>💰</span> School Fees Manager
                   </h3>
+                  <p className="text-xs text-slate-500 mt-1">
+                    Manage Class Tuition, Bus Stops & Routes, and Extracurricular Activity fees.
+                  </p>
+                </div>
+                <div className="flex items-center gap-1.5">
                   <button
                     onClick={() => locateSection("live-school-table", "school-fees")}
-                    className="text-xs bg-amber-400 hover:bg-amber-500 text-slate-950 font-bold px-3 py-1.5 rounded-lg flex items-center gap-1 shadow-sm"
+                    className="text-xs bg-amber-400 hover:bg-amber-500 text-slate-950 font-bold px-2.5 py-1.5 rounded-lg shadow-sm"
                   >
-                    📍 View on Site
+                    Tuition
+                  </button>
+                  <button
+                    onClick={() => locateSection("live-bus-table", "bus-fees")}
+                    className="text-xs bg-emerald-500 hover:bg-emerald-600 text-white font-bold px-2.5 py-1.5 rounded-lg shadow-sm"
+                  >
+                    Bus
+                  </button>
+                  <button
+                    onClick={() => locateSection("live-activity-table", "activity-fees")}
+                    className="text-xs bg-pink-500 hover:bg-pink-600 text-white font-bold px-2.5 py-1.5 rounded-lg shadow-sm"
+                  >
+                    Activities
                   </button>
                 </div>
-                <p className="text-xs text-slate-500 mt-1">
-                  Tuition fees are class-specific (LKG to 5th Std). Books, Bus, and Activities are additional facilities.
-                </p>
               </div>
 
-              {/* SECTION 1: CLASS-BY-CLASS TUITION (Matches /fees/school) */}
+              {/* 1. CLASS-BY-CLASS TUITION (Matches /fees/school) */}
               <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm space-y-4">
                 <div className="flex items-center justify-between border-b border-slate-100 pb-3">
                   <div>
@@ -678,7 +744,7 @@ export default function AdminPage() {
                   </div>
                   <button
                     onClick={handleAddClassFee}
-                    className="text-xs bg-blue-600 hover:bg-blue-700 text-white font-bold px-3 py-1.5 rounded-lg flex items-center gap-1 shadow-sm"
+                    className="text-xs bg-blue-600 hover:bg-blue-700 text-white font-bold px-3 py-1.5 rounded-lg flex items-center gap-1 shadow-sm cursor-pointer"
                   >
                     ➕ Add Class
                   </button>
@@ -722,116 +788,181 @@ export default function AdminPage() {
                     </div>
                   ))}
                 </div>
+              </div>
 
-                <div className="bg-blue-50/70 p-3 rounded-xl border border-blue-200/80 text-[11px] text-blue-800 flex items-center gap-2">
-                  <i className="ti ti-info-circle text-base text-blue-600"></i>
-                  <span>The Overview Fees page automatically shows this tuition range: <strong>₹{lowestFee} – ₹{highestFee} / year</strong></span>
+              {/* 2. BUS STOPS & TRANSPORT FEES (Matches /fees/bus - WITH ADD BUTTON!) */}
+              <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm space-y-4">
+                <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                  <div>
+                    <h4 className="font-extrabold text-sm text-emerald-800 flex items-center gap-1.5">
+                      🚌 School Bus Transport Fees by Stop / Route
+                    </h4>
+                    <p className="text-[11px] text-slate-500">
+                      Live on: <code className="text-emerald-600 font-bold">sinaps.in/fees/bus</code>
+                    </p>
+                  </div>
+                  <button
+                    onClick={handleAddBusStop}
+                    className="text-xs bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-3 py-1.5 rounded-lg flex items-center gap-1 shadow-sm cursor-pointer"
+                  >
+                    ➕ Add Bus Stop
+                  </button>
+                </div>
+
+                <div className="space-y-2">
+                  <div className="grid grid-cols-12 gap-2 text-[11px] font-bold text-slate-500 uppercase tracking-wider px-2">
+                    <span className="col-span-6">Bus Stop / Route Name</span>
+                    <span className="col-span-4">Term Fees (Rs.)</span>
+                    <span className="col-span-2 text-right">Delete</span>
+                  </div>
+
+                  {content.fees?.busStops?.map((item, idx) => (
+                    <div
+                      key={idx}
+                      className="grid grid-cols-12 gap-2 items-center bg-emerald-50/40 p-2 rounded-xl border border-emerald-200/80 hover:border-emerald-400 transition-all"
+                    >
+                      <input
+                        type="text"
+                        value={item.stopName}
+                        onChange={(e) => handleBusStopChange(idx, "stopName", e.target.value)}
+                        placeholder="e.g. Anthiyur Bus Stand"
+                        className="col-span-6 bg-white text-slate-900 px-3 py-1.5 rounded-lg border border-slate-300 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                      />
+                      <input
+                        type="text"
+                        value={item.amount}
+                        onChange={(e) => handleBusStopChange(idx, "amount", e.target.value)}
+                        placeholder="e.g. 2,500"
+                        className="col-span-4 bg-white text-emerald-700 font-black px-3 py-1.5 rounded-lg border border-slate-300 text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500 text-right"
+                      />
+                      <div className="col-span-2 text-right">
+                        <button
+                          onClick={() => handleDeleteBusStop(idx)}
+                          className="text-slate-400 hover:text-rose-600 p-1.5 rounded-md hover:bg-rose-50 transition-all cursor-pointer"
+                          title="Remove Bus Stop"
+                        >
+                          <i className="ti ti-trash text-base"></i>
+                        </button>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
 
-              {/* SECTION 2: ADDITIONAL FACILITY FEES (Books, Bus & Activities) */}
+              {/* 3. EXTRACURRICULAR ACTIVITIES FEES (Matches /fees/activity - WITH ADD BUTTON!) */}
               <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm space-y-4">
-                <div className="border-b border-slate-100 pb-3">
-                  <h4 className="font-extrabold text-sm text-[#1E3A5F] flex items-center gap-1.5">
-                    📚 Additional School Facility Charges (Books, Bus & Activities)
+                <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                  <div>
+                    <h4 className="font-extrabold text-sm text-pink-800 flex items-center gap-1.5">
+                      🎨 Extracurricular Activity Programs & Fees
+                    </h4>
+                    <p className="text-[11px] text-slate-500">
+                      Live on: <code className="text-pink-600 font-bold">sinaps.in/fees/activity</code>
+                    </p>
+                  </div>
+                  <button
+                    onClick={handleAddActivity}
+                    className="text-xs bg-pink-600 hover:bg-pink-700 text-white font-bold px-3 py-1.5 rounded-lg flex items-center gap-1 shadow-sm cursor-pointer"
+                  >
+                    ➕ Add Activity
+                  </button>
+                </div>
+
+                <div className="space-y-2">
+                  <div className="grid grid-cols-12 gap-2 text-[11px] font-bold text-slate-500 uppercase tracking-wider px-2">
+                    <span className="col-span-6">Activity Program Name</span>
+                    <span className="col-span-4">Annual Fees (Rs.)</span>
+                    <span className="col-span-2 text-right">Delete</span>
+                  </div>
+
+                  {content.fees?.activityList?.map((item, idx) => (
+                    <div
+                      key={idx}
+                      className="grid grid-cols-12 gap-2 items-center bg-pink-50/40 p-2 rounded-xl border border-pink-200/80 hover:border-pink-400 transition-all"
+                    >
+                      <input
+                        type="text"
+                        value={item.activityName}
+                        onChange={(e) => handleActivityChange(idx, "activityName", e.target.value)}
+                        placeholder="e.g. Karate & Martial Arts"
+                        className="col-span-6 bg-white text-slate-900 px-3 py-1.5 rounded-lg border border-slate-300 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-pink-500"
+                      />
+                      <input
+                        type="text"
+                        value={item.amount}
+                        onChange={(e) => handleActivityChange(idx, "amount", e.target.value)}
+                        placeholder="e.g. 1,500"
+                        className="col-span-4 bg-white text-pink-700 font-black px-3 py-1.5 rounded-lg border border-slate-300 text-xs focus:outline-none focus:ring-2 focus:ring-pink-500 text-right"
+                      />
+                      <div className="col-span-2 text-right">
+                        <button
+                          onClick={() => handleDeleteActivity(idx)}
+                          className="text-slate-400 hover:text-rose-600 p-1.5 rounded-md hover:bg-rose-50 transition-all cursor-pointer"
+                          title="Remove Activity"
+                        >
+                          <i className="ti ti-trash text-base"></i>
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* 4. BOOK & STATIONERY FEES */}
+              <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm space-y-3">
+                <div className="border-b border-slate-100 pb-2">
+                  <h4 className="font-extrabold text-sm text-amber-800 flex items-center gap-1.5">
+                    📚 Book & Stationery Fees (/fees/book)
                   </h4>
-                  <p className="text-[11px] text-slate-500">
-                    Live on: <code className="text-blue-600 font-bold">sinaps.in/fees</code>
-                  </p>
                 </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                  {/* 1. Book Fees */}
-                  <div className="bg-amber-50/50 p-3.5 rounded-xl border border-amber-200 space-y-2">
-                    <span className="text-xs font-black text-amber-800 flex items-center gap-1">
-                      📚 Book & Stationery
-                    </span>
-                    <div>
-                      <label className="text-[10px] text-slate-600 block font-bold mb-0.5">Amount</label>
-                      <input
-                        type="text"
-                        value={content.fees?.additional?.book?.amount || ""}
-                        onChange={(e) => handleAdditionalFeeChange("book", "amount", e.target.value)}
-                        className="w-full bg-white text-slate-900 font-bold text-xs px-2.5 py-1.5 rounded-lg border border-slate-300 shadow-xs"
-                      />
-                    </div>
-                    <div>
-                      <label className="text-[10px] text-slate-600 block font-bold mb-0.5">Period</label>
-                      <input
-                        type="text"
-                        value={content.fees?.additional?.book?.period || ""}
-                        onChange={(e) => handleAdditionalFeeChange("book", "period", e.target.value)}
-                        className="w-full bg-white text-slate-900 text-xs px-2.5 py-1.5 rounded-lg border border-slate-300 shadow-xs"
-                      />
-                    </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-[10px] text-slate-600 block font-bold mb-1">Amount</label>
+                    <input
+                      type="text"
+                      value={content.fees?.additional?.book?.amount || ""}
+                      onChange={(e) => {
+                        const additional = {
+                          ...content.fees.additional,
+                          book: { ...content.fees.additional.book, amount: e.target.value }
+                        };
+                        setContent({ ...content, fees: { ...content.fees, additional } });
+                      }}
+                      className="w-full bg-white text-slate-900 font-bold text-xs px-3 py-1.5 rounded-lg border border-slate-300"
+                    />
                   </div>
-
-                  {/* 2. Bus Transport */}
-                  <div className="bg-emerald-50/50 p-3.5 rounded-xl border border-emerald-200 space-y-2">
-                    <span className="text-xs font-black text-emerald-800 flex items-center gap-1">
-                      🚌 Bus Transport
-                    </span>
-                    <div>
-                      <label className="text-[10px] text-slate-600 block font-bold mb-0.5">Amount</label>
-                      <input
-                        type="text"
-                        value={content.fees?.additional?.bus?.amount || ""}
-                        onChange={(e) => handleAdditionalFeeChange("bus", "amount", e.target.value)}
-                        className="w-full bg-white text-slate-900 font-bold text-xs px-2.5 py-1.5 rounded-lg border border-slate-300 shadow-xs"
-                      />
-                    </div>
-                    <div>
-                      <label className="text-[10px] text-slate-600 block font-bold mb-0.5">Period</label>
-                      <input
-                        type="text"
-                        value={content.fees?.additional?.bus?.period || ""}
-                        onChange={(e) => handleAdditionalFeeChange("bus", "period", e.target.value)}
-                        className="w-full bg-white text-slate-900 text-xs px-2.5 py-1.5 rounded-lg border border-slate-300 shadow-xs"
-                      />
-                    </div>
-                  </div>
-
-                  {/* 3. Activity Fees */}
-                  <div className="bg-pink-50/50 p-3.5 rounded-xl border border-pink-200 space-y-2">
-                    <span className="text-xs font-black text-pink-800 flex items-center gap-1">
-                      🎨 Extracurricular
-                    </span>
-                    <div>
-                      <label className="text-[10px] text-slate-600 block font-bold mb-0.5">Amount</label>
-                      <input
-                        type="text"
-                        value={content.fees?.additional?.activity?.amount || ""}
-                        onChange={(e) => handleAdditionalFeeChange("activity", "amount", e.target.value)}
-                        className="w-full bg-white text-slate-900 font-bold text-xs px-2.5 py-1.5 rounded-lg border border-slate-300 shadow-xs"
-                      />
-                    </div>
-                    <div>
-                      <label className="text-[10px] text-slate-600 block font-bold mb-0.5">Period</label>
-                      <input
-                        type="text"
-                        value={content.fees?.additional?.activity?.period || ""}
-                        onChange={(e) => handleAdditionalFeeChange("activity", "period", e.target.value)}
-                        className="w-full bg-white text-slate-900 text-xs px-2.5 py-1.5 rounded-lg border border-slate-300 shadow-xs"
-                      />
-                    </div>
+                  <div>
+                    <label className="text-[10px] text-slate-600 block font-bold mb-1">Period</label>
+                    <input
+                      type="text"
+                      value={content.fees?.additional?.book?.period || ""}
+                      onChange={(e) => {
+                        const additional = {
+                          ...content.fees.additional,
+                          book: { ...content.fees.additional.book, period: e.target.value }
+                        };
+                        setContent({ ...content, fees: { ...content.fees, additional } });
+                      }}
+                      className="w-full bg-white text-slate-900 text-xs px-3 py-1.5 rounded-lg border border-slate-300"
+                    />
                   </div>
                 </div>
+              </div>
 
-                {/* Footer Note */}
-                <div className="pt-2">
-                  <label className="text-xs font-bold text-slate-700 block mb-1">
-                    Disclaimer Note on Fees Page:
-                  </label>
-                  <textarea
-                    rows={2}
-                    value={content.fees?.additional?.note || ""}
-                    onChange={(e) => {
-                      const additional = { ...content.fees.additional, note: e.target.value };
-                      setContent({ ...content, fees: { ...content.fees, additional } });
-                    }}
-                    className="w-full bg-white text-slate-800 text-xs p-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
+              {/* Footer Note */}
+              <div className="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm">
+                <label className="text-xs font-bold text-slate-700 block mb-1">
+                  General Disclaimer Note on /fees Page:
+                </label>
+                <textarea
+                  rows={2}
+                  value={content.fees?.additional?.note || ""}
+                  onChange={(e) => {
+                    const additional = { ...content.fees.additional, note: e.target.value };
+                    setContent({ ...content, fees: { ...content.fees, additional } });
+                  }}
+                  className="w-full bg-white text-slate-800 text-xs p-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
               </div>
             </div>
           )}
@@ -1145,7 +1276,7 @@ export default function AdminPage() {
                       onChange={(e) =>
                         setContent({ ...content, hero: { ...content.hero, titleLine2: e.target.value } })
                       }
-                      className="w-full bg-white text-slate-900 text-xs px-2 py-1.5 rounded-lg border border-slate-300"
+                      className="w-full bg-slate-900 text-xs px-2 py-1.5 rounded-lg border border-slate-300"
                     />
                   </div>
                   <div>
@@ -1473,7 +1604,144 @@ export default function AdminPage() {
             ref={previewScrollRef}
           >
             
-            {/* LIVE INSPECTOR: PAGE 1 - FEES OVERVIEW (/fees) */}
+            {/* LIVE INSPECTOR: PAGE 1 - CLASS-WISE TUITION (/fees/school) */}
+            {previewPage === "school-fees" && (
+              <div className="fees-page" style={{ paddingTop: "40px", minHeight: "100%" }}>
+                <div className="section-container">
+                  <h1 style={{ color: "#1E3A5F", textAlign: "center", marginBottom: "20px", fontSize: "28px" }}>
+                    School Tuition Fees (2026-27)
+                  </h1>
+
+                  <div
+                    id="live-school-table"
+                    className={`max-w-[550px] mx-auto bg-white rounded-2xl p-6 shadow-xl border border-slate-100 ${
+                      highlightedSection === "live-school-table" ? "site-highlight" : ""
+                    }`}
+                  >
+                    <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                      <thead>
+                        <tr style={{ background: "#f8fafc", borderBottom: "2px solid #e2e8f0" }}>
+                          <th style={{ padding: "12px", textAlign: "left", fontWeight: 800, fontSize: "14px" }}>
+                            Class
+                          </th>
+                          <th style={{ padding: "12px", textAlign: "right", fontWeight: 800, fontSize: "14px" }}>
+                            2026-27 Fees (Rs.)
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {content.fees?.classList?.map((item, idx) => (
+                          <tr key={idx} style={{ borderBottom: "1px solid #f1f5f9" }}>
+                            <td style={{ padding: "12px", fontWeight: 600, fontSize: "14px" }}>
+                              {item.standard}
+                            </td>
+                            <td style={{ padding: "12px", textAlign: "right", fontWeight: 700, color: "#1E3A5F", fontSize: "14px" }}>
+                              {item.amount.startsWith("₹") ? item.amount : `₹${item.amount}`}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* LIVE INSPECTOR: PAGE 2 - BUS FEES TABLE (/fees/bus) */}
+            {previewPage === "bus-fees" && (
+              <div className="fees-page" style={{ paddingTop: "40px", minHeight: "100%" }}>
+                <div className="section-container">
+                  <h1 style={{ color: "#1E3A5F", textAlign: "center", marginBottom: "16px", fontSize: "28px" }}>
+                    School Bus Transport
+                  </h1>
+
+                  <div
+                    id="live-bus-table"
+                    className={`max-w-[550px] mx-auto bg-white rounded-2xl p-6 shadow-xl border border-slate-100 ${
+                      highlightedSection === "live-bus-table" ? "site-highlight" : ""
+                    }`}
+                  >
+                    <table style={{ width: "100%", borderCollapse: "collapse", marginBottom: "16px" }}>
+                      <thead>
+                        <tr style={{ background: "#f0fdf4", borderBottom: "2px solid #bbf7d0" }}>
+                          <th style={{ padding: "12px", textAlign: "left", fontWeight: 800, fontSize: "14px" }}>
+                            Bus Stop / Route
+                          </th>
+                          <th style={{ padding: "12px", textAlign: "right", fontWeight: 800, fontSize: "14px" }}>
+                            Term Fees (Rs.)
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {content.fees?.busStops?.map((item, idx) => (
+                          <tr key={idx} style={{ borderBottom: "1px solid #f1f5f9" }}>
+                            <td style={{ padding: "12px", fontWeight: 600, fontSize: "14px" }}>
+                              {item.stopName}
+                            </td>
+                            <td style={{ padding: "12px", textAlign: "right", fontWeight: 800, color: "#16a34a", fontSize: "14px" }}>
+                              {item.amount.startsWith("₹") ? item.amount : `₹${item.amount}`}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+
+                    <div className="bg-emerald-50 p-3 rounded-xl border border-emerald-100 text-xs text-emerald-800">
+                      <strong>Safety Included:</strong> Verified Drivers, Female Attendant, Comfortable Seating.
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* LIVE INSPECTOR: PAGE 3 - ACTIVITY FEES TABLE (/fees/activity) */}
+            {previewPage === "activity-fees" && (
+              <div className="fees-page" style={{ paddingTop: "40px", minHeight: "100%" }}>
+                <div className="section-container">
+                  <h1 style={{ color: "#1E3A5F", textAlign: "center", marginBottom: "16px", fontSize: "28px" }}>
+                    Extracurricular Activities
+                  </h1>
+
+                  <div
+                    id="live-activity-table"
+                    className={`max-w-[550px] mx-auto bg-white rounded-2xl p-6 shadow-xl border border-slate-100 ${
+                      highlightedSection === "live-activity-table" ? "site-highlight" : ""
+                    }`}
+                  >
+                    <table style={{ width: "100%", borderCollapse: "collapse", marginBottom: "16px" }}>
+                      <thead>
+                        <tr style={{ background: "#fdf2f8", borderBottom: "2px solid #fbcfe8" }}>
+                          <th style={{ padding: "12px", textAlign: "left", fontWeight: 800, fontSize: "14px" }}>
+                            Activity Program
+                          </th>
+                          <th style={{ padding: "12px", textAlign: "right", fontWeight: 800, fontSize: "14px" }}>
+                            Annual Fees (Rs.)
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {content.fees?.activityList?.map((item, idx) => (
+                          <tr key={idx} style={{ borderBottom: "1px solid #fdf2f8" }}>
+                            <td style={{ padding: "12px", fontWeight: 600, fontSize: "14px" }}>
+                              {item.activityName}
+                            </td>
+                            <td style={{ padding: "12px", textAlign: "right", fontWeight: 800, color: "#db2777", fontSize: "14px" }}>
+                              {item.amount.startsWith("₹") ? item.amount : `₹${item.amount}`}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+
+                    <div className="bg-pink-50 p-3 rounded-xl border border-pink-100 text-xs text-pink-800">
+                      <strong>Program Highlights:</strong> Sports coaching, music, arts, karate, yoga & field trips.
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* LIVE INSPECTOR: PAGE 4 - FEES OVERVIEW (/fees) */}
             {previewPage === "fees" && (
               <div className="fees-page" style={{ paddingTop: "20px", minHeight: "100%" }}>
                 <div className="fees-hero">
@@ -1538,6 +1806,12 @@ export default function AdminPage() {
                           <li key={i}><i className="ti ti-check"></i> {f}</li>
                         ))}
                       </ul>
+                      <div
+                        onClick={() => setPreviewPage("bus-fees")}
+                        className="mt-3 text-center text-xs font-bold text-green-700 cursor-pointer hover:underline"
+                      >
+                        View Bus Stops & Routes Table →
+                      </div>
                     </div>
 
                     {/* Activity Card */}
@@ -1554,6 +1828,12 @@ export default function AdminPage() {
                           <li key={i}><i className="ti ti-check"></i> {f}</li>
                         ))}
                       </ul>
+                      <div
+                        onClick={() => setPreviewPage("activity-fees")}
+                        className="mt-3 text-center text-xs font-bold text-pink-700 cursor-pointer hover:underline"
+                      >
+                        View All Activities & Coaching Fees →
+                      </div>
                     </div>
                   </div>
 
@@ -1564,50 +1844,74 @@ export default function AdminPage() {
               </div>
             )}
 
-            {/* LIVE INSPECTOR: PAGE 2 - CLASS-WISE TUITION (/fees/school) */}
-            {previewPage === "school-fees" && (
+            {/* LIVE INSPECTOR: PAGE 5 - TEACHERS (/teachers) */}
+            {previewPage === "teachers" && (
               <div className="fees-page" style={{ paddingTop: "40px", minHeight: "100%" }}>
                 <div className="section-container">
-                  <h1 style={{ color: "#1E3A5F", textAlign: "center", marginBottom: "20px", fontSize: "28px" }}>
-                    School Tuition Fees (2026-27)
+                  <h1 style={{ color: "#1E3A5F", textAlign: "center", marginBottom: "16px", fontSize: "28px" }}>
+                    Our Teachers
                   </h1>
+                  <p style={{ textAlign: "center", marginBottom: "28px", color: "#64748B", fontSize: "15px" }}>
+                    Meet our dedicated team of educators shaping young minds.
+                  </p>
 
                   <div
-                    id="live-school-table"
-                    className={`max-w-[550px] mx-auto bg-white rounded-2xl p-6 shadow-xl border border-slate-100 ${
-                      highlightedSection === "live-school-table" ? "site-highlight" : ""
+                    id="live-teachers"
+                    className={`grid grid-cols-2 gap-4 max-w-[700px] mx-auto ${
+                      highlightedSection === "live-teachers" ? "site-highlight" : ""
                     }`}
                   >
-                    <table style={{ width: "100%", borderCollapse: "collapse" }}>
-                      <thead>
-                        <tr style={{ background: "#f8fafc", borderBottom: "2px solid #e2e8f0" }}>
-                          <th style={{ padding: "12px", textAlign: "left", fontWeight: 800, fontSize: "14px" }}>
-                            Class
-                          </th>
-                          <th style={{ padding: "12px", textAlign: "right", fontWeight: 800, fontSize: "14px" }}>
-                            2026-27 Fees (Rs.)
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {content.fees?.classList?.map((item, idx) => (
-                          <tr key={idx} style={{ borderBottom: "1px solid #f1f5f9" }}>
-                            <td style={{ padding: "12px", fontWeight: 600, fontSize: "14px" }}>
-                              {item.standard}
-                            </td>
-                            <td style={{ padding: "12px", textAlign: "right", fontWeight: 700, color: "#1E3A5F", fontSize: "14px" }}>
-                              {item.amount.startsWith("₹") ? item.amount : `₹${item.amount}`}
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
+                    {content.teachers?.map((t, idx) => (
+                      <div
+                        key={idx}
+                        className="bg-white p-4 rounded-xl border border-slate-200 text-center shadow-sm"
+                      >
+                        <h4 className="font-extrabold text-slate-800 text-sm mb-1">{t.name}</h4>
+                        <p className="text-blue-600 font-bold text-xs mb-1.5">{t.qualification}</p>
+                        {t.role && (
+                          <span className="inline-block bg-amber-100 text-amber-800 font-extrabold text-[10px] px-2 py-0.5 rounded-full">
+                            {t.role}
+                          </span>
+                        )}
+                      </div>
+                    ))}
                   </div>
                 </div>
               </div>
             )}
 
-            {/* LIVE INSPECTOR: PAGE 3 - HOME PAGE */}
+            {/* LIVE INSPECTOR: PAGE 6 - STUDENTS (/students) */}
+            {previewPage === "students" && (
+              <div className="fees-page" style={{ paddingTop: "40px", minHeight: "100%" }}>
+                <div className="section-container">
+                  <h1 style={{ color: "#1E3A5F", textAlign: "center", marginBottom: "16px", fontSize: "28px" }}>
+                    Student Details
+                  </h1>
+
+                  <div
+                    id="live-students"
+                    className={`max-w-[550px] mx-auto bg-white rounded-2xl p-6 shadow-xl border border-slate-100 text-center ${
+                      highlightedSection === "live-students" ? "site-highlight" : ""
+                    }`}
+                  >
+                    <h2 className="text-2xl font-black text-blue-700 mb-2">{content.students?.totalCount}</h2>
+                    <p className="text-slate-600 text-sm mb-6">{content.students?.desc}</p>
+                    <div className="flex justify-around gap-4">
+                      <div className="p-4 bg-orange-50 rounded-xl flex-1 border border-orange-100">
+                        <h3 className="text-xl font-black text-orange-600 mb-1">{content.students?.prePrimaryLabel}</h3>
+                        <p className="text-xs text-slate-600">{content.students?.prePrimarySub}</p>
+                      </div>
+                      <div className="p-4 bg-emerald-50 rounded-xl flex-1 border border-emerald-100">
+                        <h3 className="text-xl font-black text-emerald-600 mb-1">{content.students?.primaryLabel}</h3>
+                        <p className="text-xs text-slate-600">{content.students?.primarySub}</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* LIVE INSPECTOR: PAGE 7 - HOME PAGE */}
             {previewPage === "home" && (
               <div>
                 {/* Top Announcement Bar */}
@@ -1715,73 +2019,6 @@ export default function AdminPage() {
                     </div>
                   </div>
                 </section>
-              </div>
-            )}
-
-            {/* LIVE INSPECTOR: PAGE 4 - TEACHERS (/teachers) */}
-            {previewPage === "teachers" && (
-              <div className="fees-page" style={{ paddingTop: "40px", minHeight: "100%" }}>
-                <div className="section-container">
-                  <h1 style={{ color: "#1E3A5F", textAlign: "center", marginBottom: "16px", fontSize: "28px" }}>
-                    Our Teachers
-                  </h1>
-                  <p style={{ textAlign: "center", marginBottom: "28px", color: "#64748B", fontSize: "15px" }}>
-                    Meet our dedicated team of educators shaping young minds.
-                  </p>
-
-                  <div
-                    id="live-teachers"
-                    className={`grid grid-cols-2 gap-4 max-w-[700px] mx-auto ${
-                      highlightedSection === "live-teachers" ? "site-highlight" : ""
-                    }`}
-                  >
-                    {content.teachers?.map((t, idx) => (
-                      <div
-                        key={idx}
-                        className="bg-white p-4 rounded-xl border border-slate-200 text-center shadow-sm"
-                      >
-                        <h4 className="font-extrabold text-slate-800 text-sm mb-1">{t.name}</h4>
-                        <p className="text-blue-600 font-bold text-xs mb-1.5">{t.qualification}</p>
-                        {t.role && (
-                          <span className="inline-block bg-amber-100 text-amber-800 font-extrabold text-[10px] px-2 py-0.5 rounded-full">
-                            {t.role}
-                          </span>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* LIVE INSPECTOR: PAGE 5 - STUDENTS (/students) */}
-            {previewPage === "students" && (
-              <div className="fees-page" style={{ paddingTop: "40px", minHeight: "100%" }}>
-                <div className="section-container">
-                  <h1 style={{ color: "#1E3A5F", textAlign: "center", marginBottom: "16px", fontSize: "28px" }}>
-                    Student Details
-                  </h1>
-
-                  <div
-                    id="live-students"
-                    className={`max-w-[550px] mx-auto bg-white rounded-2xl p-6 shadow-xl border border-slate-100 text-center ${
-                      highlightedSection === "live-students" ? "site-highlight" : ""
-                    }`}
-                  >
-                    <h2 className="text-2xl font-black text-blue-700 mb-2">{content.students?.totalCount}</h2>
-                    <p className="text-slate-600 text-sm mb-6">{content.students?.desc}</p>
-                    <div className="flex justify-around gap-4">
-                      <div className="p-4 bg-orange-50 rounded-xl flex-1 border border-orange-100">
-                        <h3 className="text-xl font-black text-orange-600 mb-1">{content.students?.prePrimaryLabel}</h3>
-                        <p className="text-xs text-slate-600">{content.students?.prePrimarySub}</p>
-                      </div>
-                      <div className="p-4 bg-emerald-50 rounded-xl flex-1 border border-emerald-100">
-                        <h3 className="text-xl font-black text-emerald-600 mb-1">{content.students?.primaryLabel}</h3>
-                        <p className="text-xs text-slate-600">{content.students?.primarySub}</p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
               </div>
             )}
 
