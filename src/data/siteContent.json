@@ -1,0 +1,163 @@
+{
+  "announcement": {
+    "text": "🌟 Admissions Open for Vijayadhasami",
+    "gradePill": "Pre KG to 5th Std",
+    "cbsePill": "CBSE Integrated",
+    "phone": "+91 63806 56434",
+    "whatsappNumber": "916380656434",
+    "whatsappMessage": "Hello, I would like to inquire about admissions for 2026-2027"
+  },
+  "hero": {
+    "badge": "⭐ Admissions Open for Vijayadhasami",
+    "titleLine1": "Where little minds",
+    "titleLine2": "grow into ",
+    "titleHighlight": "big dreams.",
+    "desc": "St. Ignatius Nursery & Primary School — A joyful, safe, and inspiring English medium school with CBSE integrated education from Pre KG to 5th Standard.",
+    "pills": [
+      "📚 Pre KG – 5th Std",
+      "✅ CBSE Integrated",
+      "📍 Budapadi, Erode"
+    ],
+    "heroImage": "/hero-girl.jpg",
+    "tourVideoUrl": "https://youtu.be/HzX-UwsBjnw"
+  },
+  "marquee": [
+    "/marquee/DSC00059.JPG",
+    "/marquee/DSC00097.JPG",
+    "/marquee/DSC00108.JPG",
+    "/marquee/DSC00120.JPG",
+    "/marquee/DSC09202.JPG",
+    "/marquee/DSC09214.JPG",
+    "/marquee/DSC09558.JPG",
+    "/marquee/DSC09928.JPG",
+    "/marquee/IMG-20260221-WA0029.jpg",
+    "/marquee/IMG-20260221-WA0040.jpg",
+    "/marquee/IMG-20260221-WA0046.jpg",
+    "/marquee/IMG-20260221-WA0048.jpg",
+    "/marquee/IMG-20260221-WA0071.jpg",
+    "/marquee/IMG-20260221-WA0100.jpg",
+    "/marquee/IMG-20260221-WA0110.jpg",
+    "/marquee/IMG-20260221-WA0120.jpg",
+    "/marquee/IMG-20260221-WA0121.jpg",
+    "/marquee/IMG-20260221-WA0122.jpg",
+    "/marquee/IMG-20260221-WA0124.jpg",
+    "/marquee/IMG-20260221-WA0133.jpg",
+    "/marquee/IMG-20260222-WA0030.jpg",
+    "/marquee/IMG-20260222-WA0051.jpg",
+    "/marquee/IMG-20260224-WA0024.jpg"
+  ],
+  "popupAlert": {
+    "enabled": false,
+    "title": "📢 Admissions Open 2026-27 | Limited Seats!",
+    "message": "Pre-KG to 5th Std admissions are actively progressing. Visit campus or WhatsApp us to schedule an admission interaction.",
+    "ctaText": "Enquire on WhatsApp",
+    "ctaLink": "https://wa.me/916380656434?text=Hello,%20I%20would%20like%20to%20inquire%20about%20admissions%20for%202026-2027"
+  },
+  "stats": {
+    "students": "170+",
+    "teachers": "10",
+    "ratio": "1:17",
+    "passRate": "100%"
+  },
+  "teachers": [
+    {
+      "name": "Mrs. Anitha R.",
+      "qualification": "M.A., B.Ed.",
+      "role": "Primary Head"
+    },
+    {
+      "name": "Mr. Suresh K.",
+      "qualification": "M.Sc., B.Ed.",
+      "role": "Mathematics & Science"
+    },
+    {
+      "name": "Mrs. Lakshmi V.",
+      "qualification": "B.A., B.Ed.",
+      "role": "Languages (Tamil & English)"
+    },
+    {
+      "name": "Ms. Priya M.",
+      "qualification": "M.Com, B.Ed.",
+      "role": "Social Studies"
+    },
+    {
+      "name": "Mr. Karthik S.",
+      "qualification": "B.Sc., B.Ed.",
+      "role": "General Science"
+    },
+    {
+      "name": "Mrs. Meena T.",
+      "qualification": "M.A., M.Ed.",
+      "role": "English & Phonics"
+    },
+    {
+      "name": "Ms. Kavya P.",
+      "qualification": "B.E., B.Ed.",
+      "role": "Computer Science"
+    },
+    {
+      "name": "Mrs. Raji N.",
+      "qualification": "B.Sc., D.T.Ed.",
+      "role": "Kindergarten Lead"
+    },
+    {
+      "name": "Mr. Ramesh D.",
+      "qualification": "M.P.Ed.",
+      "role": "Physical Education"
+    },
+    {
+      "name": "Mrs. Geetha S.",
+      "qualification": "M.Sc., B.Ed.",
+      "role": "Environmental Studies"
+    }
+  ],
+  "students": {
+    "total": "170 Happy Students",
+    "prePrimary": "LKG & UKG",
+    "primary": "Classes I to V"
+  },
+  "fees": {
+    "tuition": [
+      {
+        "standard": "Pre-KG, LKG, UKG",
+        "amount": "₹15,000",
+        "term": "per term"
+      },
+      {
+        "standard": "Class 1 to 3",
+        "amount": "₹18,000",
+        "term": "per term"
+      },
+      {
+        "standard": "Class 4 & 5",
+        "amount": "₹20,000",
+        "term": "per term"
+      }
+    ],
+    "bus": [
+      {
+        "route": "Budapadi Local (0 – 3 KM)",
+        "amount": "₹4,500",
+        "term": "per term"
+      },
+      {
+        "route": "Anthiyur / Ammapettai (3 – 8 KM)",
+        "amount": "₹6,500",
+        "term": "per term"
+      },
+      {
+        "route": "Outer Limits (8+ KM)",
+        "amount": "₹8,500",
+        "term": "per term"
+      }
+    ],
+    "note": "Fees are subject to minor adjustments based on the specific grade. Please contact the admissions office at +91 63806 56434 for a personalized fee breakdown for your child."
+  },
+  "contact": {
+    "schoolName": "St. Ignatius Nursery & Primary School",
+    "address": "Budapadi, Anthiyur Taluk, Erode District, Tamil Nadu — 638311",
+    "phone": "+91 63806 56434",
+    "email": "contact@sinaps.in",
+    "mapUrl": "https://maps.google.com/?q=St+Ignatius+School+Budapadi"
+  }
+}

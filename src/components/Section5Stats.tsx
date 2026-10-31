@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState, useRef } from "react";
 import { motion, useInView } from "framer-motion";
+import siteContent from "@/data/siteContent.json";
 
 function StatCard({ numStr, label, link }: { numStr: string; label: string; link?: string }) {
   const ref = useRef(null);
@@ -37,11 +38,12 @@ function StatCard({ numStr, label, link }: { numStr: string; label: string; link
 }
 
 export default function Section5Stats() {
+  const { stats: sData } = siteContent;
   const stats = [
-    { numStr: "170", label: "Students", link: "/students" },
-    { numStr: "10", label: "Teachers", link: "/teachers" },
-    { numStr: "2", label: "State and CBSE", link: "/curriculum" },
-    { numStr: "100%", label: "Dedicated to Excellence" },
+    { numStr: sData.students, label: "Students", link: "/students" },
+    { numStr: sData.teachers, label: "Teachers", link: "/teachers" },
+    { numStr: sData.ratio, label: "Student Ratio", link: "/curriculum" },
+    { numStr: sData.passRate, label: "CBSE Pass Rate" },
   ];
 
   return (

@@ -1,18 +1,21 @@
 import React from "react";
+import siteContent from "@/data/siteContent.json";
 
 export default function TopBar() {
+  const { announcement } = siteContent;
+
   return (
     <div className="top-bar">
       <div className="top-bar-inner">
-        <span>🌟 Admissions Open for Vijayadhasami</span>
+        <span>{announcement.text}</span>
         <span className="sep">·</span>
-        <span>Pre KG to 5th Std</span>
+        <span>{announcement.gradePill}</span>
         <span className="sep">·</span>
-        <span>CBSE Integrated</span>
+        <span>{announcement.cbsePill}</span>
         <span className="sep">·</span>
-        <a href="tel:+916380656434">
+        <a href={`tel:${announcement.phone.replace(/[^0-9+]/g, "")}`}>
           <i className="ti ti-phone-call" style={{ marginRight: 4 }}></i>
-          +91 63806 56434
+          {announcement.phone}
         </a>
       </div>
     </div>

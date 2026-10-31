@@ -13,6 +13,7 @@ import Section6Admissions from "@/components/Section6Admissions";
 import Footer from "@/components/Footer";
 import PhotoMarquee from "@/components/PhotoMarquee";
 import FloatingShapes from "@/components/FloatingShapes";
+import PopupAlert from "@/components/PopupAlert";
 
 export default function Home() {
   const [progress, setProgress] = useState(0);
@@ -30,6 +31,7 @@ export default function Home() {
   return (
     <>
       <LoadingScreen progress={progress} />
+      <PopupAlert />
       <TopBar />
       <Navbar />
       <FloatingShapes />

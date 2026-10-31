@@ -5,20 +5,10 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import TopBar from "@/components/TopBar";
 import FloatingShapes from "@/components/FloatingShapes";
+import siteContent from "@/data/siteContent.json";
 
 export default function TeachersPage() {
-  const teachers = [
-    { name: "Mrs. Anitha R.", qualification: "M.A., B.Ed." },
-    { name: "Mr. Suresh K.", qualification: "M.Sc., B.Ed." },
-    { name: "Mrs. Lakshmi V.", qualification: "B.A., B.Ed." },
-    { name: "Ms. Priya M.", qualification: "M.Com, B.Ed." },
-    { name: "Mr. Karthik S.", qualification: "B.Sc., B.Ed." },
-    { name: "Mrs. Meena T.", qualification: "M.A., M.Ed." },
-    { name: "Ms. Kavya P.", qualification: "B.E., B.Ed." },
-    { name: "Mrs. Raji N.", qualification: "B.Sc., D.T.Ed." },
-    { name: "Mr. Ramesh D.", qualification: "M.P.Ed." },
-    { name: "Mrs. Geetha S.", qualification: "M.Sc., B.Ed." },
-  ];
+  const teachers = siteContent.teachers || [];
 
   return (
     <>
@@ -29,13 +19,16 @@ export default function TeachersPage() {
       <main className="fees-page" style={{ paddingTop: '150px', paddingBottom: '100px', minHeight: '80vh' }}>
         <div className="section-container">
           <h1 style={{ color: '#fff', textAlign: 'center', marginBottom: '20px' }}>Our Teachers</h1>
-          <div style={{ maxWidth: '800px', margin: '0 auto', background: '#fff', borderRadius: '15px', padding: '30px', color: '#333' }}>
-            <p style={{ fontSize: '1.2rem', textAlign: 'center', marginBottom: '30px' }}>Meet our dedicated team of 10 qualified educators.</p>
+          <div style={{ maxWidth: '850px', margin: '0 auto', background: '#fff', borderRadius: '20px', padding: '35px', color: '#333', boxShadow: 'var(--shadow-card)' }}>
+            <p style={{ fontSize: '1.2rem', textAlign: 'center', marginBottom: '30px', fontWeight: 600 }}>
+              Meet our dedicated team of educators shaping young minds.
+            </p>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))', gap: '20px' }}>
-              {teachers.map((t, i) => (
-                <div key={i} style={{ padding: '20px', border: '1px solid #eee', borderRadius: '10px', textAlign: 'center' }}>
-                  <h3 style={{ margin: '0 0 10px 0', color: 'var(--blue)' }}>{t.name}</h3>
-                  <p style={{ margin: 0, color: '#666' }}>{t.qualification}</p>
+              {teachers.map((t: any, i: number) => (
+                <div key={i} style={{ padding: '20px', border: '1px solid #eee', borderRadius: '14px', textAlign: 'center', background: 'var(--bg-cream)' }}>
+                  <h3 style={{ margin: '0 0 8px 0', color: 'var(--blue-dark)', fontSize: '1.1rem' }}>{t.name}</h3>
+                  <p style={{ margin: '0 0 6px 0', color: 'var(--blue)', fontWeight: 700, fontSize: '0.9rem' }}>{t.qualification}</p>
+                  {t.role && <span style={{ display: 'inline-block', background: 'var(--orange-light)', color: 'var(--orange)', fontSize: '0.75rem', fontWeight: 800, padding: '3px 10px', borderRadius: '100px' }}>{t.role}</span>}
                 </div>
               ))}
             </div>

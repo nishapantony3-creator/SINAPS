@@ -4,6 +4,7 @@ import React from "react";
 import Image from "next/image";
 import { motion } from "framer-motion";
 import TiltWrapper from "@/components/TiltWrapper";
+import siteContent from "@/data/siteContent.json";
 
 const container = {
   hidden: { opacity: 0 },
@@ -15,6 +16,9 @@ const item = {
 };
 
 export default function HeroSection() {
+  const { hero, announcement } = siteContent;
+  const whatsappUrl = `https://wa.me/${announcement.whatsappNumber}?text=${encodeURIComponent(announcement.whatsappMessage)}`;
+
   return (
     <section id="home" className="hero">
       <div className="hero-blobs">
@@ -27,30 +31,31 @@ export default function HeroSection() {
         <motion.div className="hero-content" variants={container} initial="hidden" whileInView="visible" viewport={{ once: true }}>
           <motion.div className="hero-badge" variants={item}>
             <span className="emoji">⭐</span>
-            Admissions Open for Vijayadhasami
+            {hero.badge}
           </motion.div>
 
           <motion.h1 className="hero-title" variants={item}>
-            Where little minds<br />grow into <span className="highlight">big dreams.</span>
+            {hero.titleLine1}<br />
+            {hero.titleLine2}<span className="highlight">{hero.titleHighlight}</span>
           </motion.h1>
 
           <motion.p className="hero-desc" variants={item}>
-            St. Ignatius Nursery & Primary School — A joyful, safe, and inspiring English medium school with CBSE integrated education from Pre KG to 5th Standard.
+            {hero.desc}
           </motion.p>
 
           <motion.div className="hero-buttons" variants={item}>
-            <a href="https://wa.me/916380656434?text=Hello,%20I%20would%20like%20to%20inquire%20about%20admissions%20for%202026-2027" target="_blank" rel="noopener noreferrer" className="btn-primary">
+            <a href={whatsappUrl} target="_blank" rel="noopener noreferrer" className="btn-primary">
               <i className="ti ti-brand-whatsapp" style={{ fontSize: "1.2rem", verticalAlign: "middle", marginRight: "8px" }}></i>Enquire on WhatsApp
             </a>
-            <a href="https://youtu.be/HzX-UwsBjnw" target="_blank" rel="noopener noreferrer" className="btn-secondary">
+            <a href={hero.tourVideoUrl} target="_blank" rel="noopener noreferrer" className="btn-secondary">
               <i className="ti ti-player-play-filled"></i> Watch School Tour
             </a>
           </motion.div>
 
           <motion.div className="hero-pills" variants={item}>
-            <span className="hero-pill">📚 Pre KG – 5th Std</span>
-            <span className="hero-pill">✅ CBSE Integrated</span>
-            <span className="hero-pill">📍 Budapadi, Erode</span>
+            {hero.pills.map((p, idx) => (
+              <span key={idx} className="hero-pill">{p}</span>
+            ))}
           </motion.div>
         </motion.div>
 
@@ -62,7 +67,7 @@ export default function HeroSection() {
         >
           <TiltWrapper>
             <div className="hero-card float-slow">
-              <Image src="/hero-girl.jpg" alt="Happy student at SINAPS" width={380} height={280} className="hero-card-img" priority />
+              <Image src={hero.heroImage} alt="Happy student at SINAPS" width={380} height={280} className="hero-card-img" priority />
               <div className="hero-card-footer">
                 <Image src="/logo.png" alt="SINAPS" width={48} height={48} className="hero-card-logo" />
                 <div className="hero-card-info">
