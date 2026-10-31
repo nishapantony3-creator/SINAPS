@@ -3,6 +3,8 @@ import fs from "fs";
 import path from "path";
 import defaultContent from "@/data/siteContent.json";
 
+export const dynamic = "force-dynamic";
+
 const CONTENT_FILE = path.join(process.cwd(), "src", "data", "siteContent.json");
 
 export async function GET() {
@@ -13,7 +15,7 @@ export async function GET() {
     }
     return NextResponse.json({ success: true, data: defaultContent });
   } catch (error) {
-    console.warn("Reading from defaultContent:", error);
+    console.warn("Fallback to defaultContent:", error);
     return NextResponse.json({ success: true, data: defaultContent });
   }
 }
@@ -36,7 +38,7 @@ export async function POST(req: NextRequest) {
     try {
       fs.writeFileSync(CONTENT_FILE, JSON.stringify(data, null, 2), "utf-8");
     } catch (writeErr) {
-      console.warn("Filesystem write skipped (e.g. read-only serverless):", writeErr);
+      console.warn("Filesystem write skipped (read-only serverless):", writeErr);
     }
 
     // Cloud / Vercel persistence: if GITHUB_TOKEN is configured in Vercel, push commit!
@@ -83,7 +85,7 @@ export async function POST(req: NextRequest) {
           });
         }
       } catch (ghErr) {
-        console.warn("GitHub API call error:", ghErr);
+        console.warn("GitHub API error:", ghErr);
       }
     }
 
